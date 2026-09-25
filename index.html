@@ -3,2293 +3,761 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SImulador IV/IO v1.0 | Estación de Infusión & Accesos Vasculares e Intraóseos</title>
+    <title>SImulador IV/IO v1.0</title>
+    
     <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Flaticon UIcons Regular Rounded CDN -->
+    <!-- Flaticon UIcons -->
     <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
-    <!-- Google Fonts: Inter & JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bs-body-bg: #f8fafc;
-            --bs-body-color: #0f172a;
-            --clinic-teal: #0891b2;
-            --clinic-teal-dark: #0e7490;
-            --clinic-border: #cbd5e1;
+            --bg-body: #e2e8f0;
             --oled-bg: #020617;
             --oled-cyan: #38bdf8;
-            --oled-green: #34d399;
-            --oled-amber: #fbbf24;
+            --oled-green: #4ade80;
+            --oled-amber: #fde047;
             --oled-red: #f87171;
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: #0f172a;
             -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-            min-height: 100vh;
-            line-height: 1.5;
         }
 
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* GLOBAL ICON FIX: PREVENT OVERLAPPING WITH TEXT */
-        i.fi {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            vertical-align: middle;
-            line-height: 1;
-        }
-
-        .btn i.fi, 
-        .badge i.fi, 
-        .nav-link i.fi,
-        .access-card i.fi,
-        .alert i.fi {
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-
-        .btn-icon-only i.fi {
-            margin-right: 0 !important;
-        }
-
-        .clinic-card {
-            background: #ffffff;
-            border: 1px solid var(--clinic-border);
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
-            height: 100%;
-            padding: clamp(16px, 1.8vw, 24px);
-        }
-
-        /* PUMP BEZEL & SHELL */
+        /* Pump Main Chassis */
         .pump-wrapper {
-            width: 100%;
-            max-width: 610px;
-            min-width: 320px;
+            max-width: 520px;
             margin: 0 auto;
-        }
-
-        .pump-chassis {
-            background: linear-gradient(175deg, #ffffff 0%, #f1f5f9 50%, #cbd5e1 100%);
-            border: 2px solid #94a3b8;
-            border-radius: 26px;
-            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.22), inset 0 2px 4px #ffffff;
-            padding: clamp(12px, 1.5vw, 20px);
-        }
-
-        .pump-interior {
-            background: #ffffff;
+            background: linear-gradient(145deg, #ffffff, #f1f5f9);
             border: 2px solid #cbd5e1;
             border-radius: 20px;
-            overflow: hidden;
-        }
-
-        /* MECHANICAL BAY (LEFT) */
-        .pump-bay {
-            background: linear-gradient(90deg, #f8fafc 0%, #e2e8f0 100%);
-            border-right: 2px solid #cbd5e1;
-            padding: clamp(10px, 1.2vw, 16px);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            user-select: none;
-        }
-
-        .tube-chamber {
-            width: 100%;
-            height: clamp(180px, 20vh, 230px);
-            background: #090f1d;
-            border-radius: 12px;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid #1e293b;
-        }
-
-        .iv-line-groove {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 12px;
-            height: 100%;
-            background: rgba(186, 230, 253, 0.35);
-            border-left: 2px solid rgba(255, 255, 255, 0.85);
-            border-right: 2px solid rgba(148, 163, 184, 0.6);
-            z-index: 2;
-        }
-
-        .drop-droplet {
-            width: 8px;
-            height: 16px;
-            background: #0284c7;
-            border-radius: 4px;
-            position: absolute;
-            left: 0;
-            opacity: 0;
-        }
-
-        .is-pumping .drop-droplet {
-            animation: dropletFall 0.85s linear infinite;
-        }
-
-        @keyframes dropletFall {
-            0% { top: -8%; opacity: 0; }
-            20% { opacity: 0.95; }
-            80% { opacity: 0.95; }
-            100% { top: 108%; opacity: 0; }
-        }
-
-        .cam-finger {
-            width: 86%;
-            height: 14px;
-            background: #475569;
-            border: 1px solid #1e293b;
-            border-radius: 6px;
-        }
-
-        .is-pumping .cam-finger {
-            animation: camMotion 0.65s ease-in-out infinite alternate;
-        }
-
-        @keyframes camMotion {
-            0% { transform: scaleX(0.85) translateX(-2px); background: #475569; }
-            100% { transform: scaleX(1.15) translateX(3px); background: #38bdf8; }
-        }
-
-        .lever-switch {
-            width: 36px;
-            height: 58px;
-            background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 100%);
-            border: 2px solid #64748b;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.22s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.18);
-        }
-
-        .lever-switch.lever-closed {
-            background: linear-gradient(180deg, #86efac 0%, #16a34a 100%);
-            border-color: #15803d;
-            transform: rotate(-14deg) translateY(2px);
-        }
-
-        /* SENSOR & DIAGNOSTIC CARD */
-        .diagnostic-card-clean {
-            background: #ffffff;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 10px 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .diag-action-btn {
-            width: 100%;
-            min-height: 42px;
-            height: auto;
-            font-size: clamp(0.74rem, 0.8vw, 0.85rem);
-            font-weight: 700;
-            line-height: 1.35;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            padding: 8px 6px;
-            text-align: center;
-        }
-
-        /* CONSOLE & OLED DISPLAY */
-        .pump-console {
-            background: #f8fafc;
-            padding: clamp(12px, 1.5vw, 18px);
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .lcd-display {
-            background-color: var(--oled-bg);
-            border: 2.5px solid #1e293b;
-            border-radius: 16px;
-            color: var(--oled-cyan);
-            padding: clamp(12px, 1.4vw, 16px);
-            box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.95), 0 4px 14px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 235px;
-            height: auto;
-            position: relative;
-            user-select: none;
-        }
-
-        .lcd-drug-title {
-            font-size: clamp(0.96rem, 1.1vw, 1.22rem);
-            line-height: 1.35;
-            white-space: normal;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            hyphens: auto;
-            margin-bottom: 6px;
-        }
-
-        .screen-flash-alarm {
-            animation: screenAlarmPulse 0.5s infinite alternate ease-in-out;
-        }
-
-        @keyframes screenAlarmPulse {
-            from { background-color: rgba(220, 38, 38, 0.28); }
-            to { background-color: rgba(220, 38, 38, 0.88); color: #ffffff; }
-        }
-
-        .lcd-field {
-            cursor: pointer;
-            border: 1.5px solid transparent;
-            border-radius: 10px;
-            padding: 8px 10px;
-            transition: all 0.15s ease;
-        }
-
-        .lcd-field:hover {
-            background: rgba(56, 189, 248, 0.15);
-            border-color: rgba(56, 189, 248, 0.4);
-        }
-
-        .lcd-field-active {
-            background: rgba(56, 189, 248, 0.3) !important;
-            border-color: #38bdf8 !important;
-        }
-
-        /* SOFTKEY TACTILE BAR (TOTALLY SEPARATE) */
-        .softkey-physical-bar {
-            background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%);
-            border: 2px solid #94a3b8;
-            border-radius: 14px;
-            padding: 10px 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08), inset 0 1px 0 #ffffff;
-            margin: 2px 0 6px 0;
-            width: 100%;
-        }
-
-        .softkey-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            width: 100%;
-        }
-
-        .softkey-btn {
-            background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
-            color: #f1f5f9;
-            border: 1.5px solid #475569;
-            border-radius: 8px;
-            min-height: 44px;
-            height: auto;
-            padding: 8px 6px;
-            font-size: clamp(0.72rem, 0.8vw, 0.86rem);
-            font-weight: 700;
-            line-height: 1.25;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            box-shadow: 0 3px 0 #0f172a, 0 4px 6px rgba(0,0,0,0.2);
-            transition: all 0.12s ease;
-            user-select: none;
-        }
-
-        .softkey-btn:hover {
-            background: linear-gradient(180deg, #475569 0%, #334155 100%);
-            color: #38bdf8;
-            border-color: #38bdf8;
-        }
-
-        .softkey-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #0f172a;
-        }
-
-        /* MEMBRANE KEYPAD ENCLOSURE */
-        .membrane-enclosure {
-            background: #090e17;
-            border-radius: 16px;
-            padding: clamp(12px, 1.4vw, 16px);
-            border: 2px solid #1e293b;
+            box-shadow: 0 15px 35px -10px rgba(0,0,0,0.2), inset 0 2px 4px #fff;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            width: 100%;
         }
 
-        .m-key {
-            border: none;
-            outline: none;
+        .pump-interior {
+            display: flex;
+            background: #ffffff;
+            border: 2px solid #94a3b8;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Mechanical Bay */
+        .mech-bay {
+            width: 28%;
+            background: #f1f5f9;
+            border-right: 2px solid #cbd5e1;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .lever-switch {
+            width: 32px;
+            height: 55px;
+            background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+            border: 2px solid #064e3b;
+            border-radius: 6px;
+            margin: 0 auto;
             cursor: pointer;
+            transition: all 0.2s;
+            transform: rotate(-10deg);
+            box-shadow: 2px 4px 6px rgba(0,0,0,0.2);
+        }
+        .lever-switch.open {
+            background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+            border-color: #7f1d1d;
+            transform: rotate(10deg);
+        }
+
+        .tube-chamber {
+            height: 120px;
+            background: #0f172a;
+            border-radius: 8px;
+            border: 2px solid #475569;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+        }
+        .tube-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+            border-left: 1px solid rgba(255,255,255,0.5);
+        }
+        .drop {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 12px;
+            background: #38bdf8;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 2;
+        }
+        .is-pumping .drop { animation: dropFall 1s infinite linear; }
+        @keyframes dropFall { 0% { top: -10%; opacity: 1; } 80% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        
+        .cam { height: 10px; background: #64748b; border-radius: 4px; z-index: 1; margin: 0 4px; }
+        .is-pumping .cam { animation: camMove 0.5s infinite alternate ease-in-out; }
+        @keyframes camMove { 0% { transform: scaleX(0.9) translateX(-2px); } 100% { transform: scaleX(1.1) translateX(2px); background:#94a3b8;} }
+
+        /* Console Bay */
+        .console-bay {
+            width: 72%;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* OLED Screen */
+        .oled-screen {
+            background: var(--oled-bg);
+            border: 3px solid #1e293b;
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 210px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        .lcd-drug-title {
+            color: var(--oled-amber);
+            font-size: 0.95rem;
             font-weight: 700;
-            display: inline-flex;
+            line-height: 1.25;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 6px;
+        }
+
+        .lcd-param-box {
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 4px;
+            transition: 0.2s;
+        }
+        .lcd-param-box.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--oled-cyan);
+        }
+
+        /* STACKED BUTTONS (Icon top, Text bottom) to avoid text collision */
+        .btn-stacked {
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
-            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
-            transition: transform 0.08s, box-shadow 0.08s, background-color 0.15s;
-            user-select: none;
+            padding: 8px 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            line-height: 1.2;
             text-align: center;
-            line-height: 1.25;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+            white-space: normal;
         }
-
-        .m-key:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+        .btn-stacked i.fi {
+            font-size: 1.3rem;
+            margin-bottom: 4px !important;
+            margin-right: 0 !important;
+            display: block;
         }
+        .btn-stacked:active { transform: translateY(4px); box-shadow: none; }
 
-        /* ZONE 1: ACTION ROWS */
-        .control-grid-top {
+        .btn-diag { background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; }
+        .btn-start { background: #10b981; color: #fff; box-shadow: 0 4px 0 #047857; }
+        .btn-stop { background: #ef4444; color: #fff; box-shadow: 0 4px 0 #b91c1c; }
+        .btn-pause { background: #eab308; color: #fff; box-shadow: 0 4px 0 #a16207; }
+        .btn-power { background: #3b82f6; color: #fff; box-shadow: 0 4px 0 #1d4ed8; }
+        .btn-bolus { background: #8b5cf6; color: #fff; box-shadow: 0 4px 0 #6d28d9; }
+        .btn-silence { background: #f97316; color: #fff; box-shadow: 0 4px 0 #c2410c; }
+        .btn-enter { background: #0ea5e9; color: #fff; box-shadow: 0 4px 0 #0369a1; }
+        .btn-nav { background: #64748b; color: #fff; box-shadow: 0 4px 0 #334155; }
+
+        .btn-softkey { background: #334155; color: #fff; border: 1px solid #1e293b; border-radius: 6px; font-size: 0.65rem; padding: 6px 2px; font-weight: 700; }
+
+        /* Isolated Numeric Grid */
+        .keypad-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            width: 100%;
-        }
-
-        .m-key-transport {
-            min-height: 52px;
-            height: auto;
-            border-radius: 10px;
-            font-size: clamp(0.78rem, 0.88vw, 0.94rem);
-            padding: 8px 10px;
-            width: 100%;
-            white-space: nowrap;
-        }
-
-        .m-key-start {
-            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-            color: #ffffff;
-            box-shadow: 0 3px 0 #047857;
-        }
-        .m-key-start:hover { background: linear-gradient(180deg, #34d399 0%, #10b981 100%); }
-
-        .m-key-stop {
-            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-            color: #ffffff;
-            box-shadow: 0 3px 0 #991b1b;
-        }
-        .m-key-stop:hover { background: linear-gradient(180deg, #f87171 0%, #ef4444 100%); }
-
-        .m-key-power {
-            background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-            color: #ffffff;
-            box-shadow: 0 3px 0 #b45309;
-        }
-
-        .m-key-slate {
-            background: #334155;
-            color: #f8fafc;
-            box-shadow: 0 3px 0 #1e293b;
-        }
-        .m-key-slate:hover { background: #475569; color: #ffffff; }
-
-        .m-key-silence {
-            background: #1e293b;
-            color: #f87171;
-            border: 1.5px solid #475569;
-            box-shadow: 0 3px 0 #0f172a;
-        }
-
-        /* ZONE 2: ISOLATED NUMERIC MATRIX */
-        .numeric-pad-isolated {
-            background: #0f172a;
-            border-radius: 14px;
-            padding: 12px;
-            border: 1px solid #1e293b;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: clamp(10px, 1.2vw, 14px);
+            gap: 12px;
             justify-items: center;
-            align-items: center;
-            width: 100%;
+            background: #f1f5f9;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
         }
-
-        .m-key-num {
-            width: clamp(50px, 4vw, 62px);
-            height: clamp(50px, 4vw, 62px);
+        .btn-num {
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #ffffff;
-            color: #0f172a;
-            font-size: clamp(1.15rem, 1.3vw, 1.5rem);
             border: 1px solid #cbd5e1;
-            margin: 0 auto;
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #94a3b8;
         }
+        .btn-num:active { transform: translateY(3px); box-shadow: none; }
+        .btn-clr { background: #334155; color: #fff; font-size: 0.85rem; border-color: #1e293b; box-shadow: 0 3px 0 #0f172a;}
 
-        .m-key-num:hover {
-            background: #f1f5f9;
-            color: #0284c7;
+        /* Clinical Panels */
+        .clinic-card {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
         }
-
-        .m-key-clr {
-            background: #334155;
-            color: #fbbf24;
-            font-size: clamp(0.88rem, 1vw, 1.05rem);
-            border-color: #475569;
-        }
-        .m-key-clr:hover { background: #475569; color: #ffffff; }
-
-        /* ZONE 3: NAVIGATION & CONFIRMATION */
-        .nav-grid-bottom {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr 1fr;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .m-key-nav {
-            min-height: 50px;
-            height: auto;
-            border-radius: 10px;
-            font-size: clamp(0.78rem, 0.88vw, 0.94rem);
-            padding: 8px 10px;
-            width: 100%;
-        }
-
-        .m-key-enter {
-            background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
-            color: #ffffff;
-            box-shadow: 0 3px 0 #075985;
-            white-space: nowrap;
-        }
-        .m-key-enter:hover { background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%); }
-
-        /* ACCESS AND WORKSPACE CARDS */
-        .access-card {
-            border: 1.5px solid #e2e8f0;
-            background: #ffffff;
-            border-radius: 14px;
+        .access-item {
             cursor: pointer;
-            transition: all 0.18s ease;
-            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            transition: 0.2s;
             height: 100%;
         }
-
-        .access-card:hover {
-            border-color: #94a3b8;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-        }
-
-        .access-card.selected {
-            border-color: var(--clinic-teal) !important;
-            background: #f0fdfa !important;
-            box-shadow: 0 6px 18px rgba(8, 145, 178, 0.18);
-        }
-
-        .nav-clinic-tabs .nav-link {
-            border-radius: 12px;
-            font-size: clamp(0.86rem, 0.95vw, 1rem);
-            font-weight: 600;
-            color: #64748b;
-            padding: 12px 18px;
-            display: inline-flex;
-            align-items: center;
-            border: none;
-        }
-
-        .nav-clinic-tabs .nav-link.active {
-            background-color: var(--clinic-teal);
-            color: #ffffff;
-        }
-
-        .category-subtab .btn {
-            font-size: clamp(0.78rem, 0.85vw, 0.9rem);
-            font-weight: 600;
-            border-radius: 10px;
-            padding: 8px 12px;
-        }
-
-        .tooltip-inner {
-            max-width: 300px;
-            font-size: 0.82rem;
-            line-height: 1.4;
-            padding: 10px 14px;
-            border-radius: 10px;
-            background-color: #0f172a;
-            text-align: left;
-        }
+        .access-item:hover { border-color: #94a3b8; background: #f8fafc; }
+        .access-item.active-access { border-color: #0ea5e9; background: #f0f9ff; box-shadow: 0 0 0 1px #0ea5e9; }
+        
+        i.fi { line-height: 1; vertical-align: middle; }
     </style>
 </head>
 <body>
 
 
-<header class="navbar navbar-expand-lg bg-white border-bottom sticky-top py-2.5 px-3 px-xl-4 shadow-sm">
-    <div class="container-fluid p-0">
-        <div class="d-flex align-items-center gap-3">
-            <span class="d-inline-flex p-2.5 rounded-3 bg-info bg-opacity-10 text-primary">
-                <i class="fi fi-rr-pulse fs-4"></i>
-            </span>
-            <div class="lh-sm">
-                <div class="fw-bold fs-5 d-flex align-items-center gap-2">
-                    <span>SImulador IV/IO</span> 
-                    <span class="badge bg-primary-subtle text-primary border font-mono small">v1.0</span>
-                </div>
-                <small class="text-muted d-block mt-0.5" style="font-size: 0.78rem;">Simulador Volumétrico Clínico • Vías Vasculares e Intraóseas</small>
-            </div>
-        </div>
-
-        <div class="d-flex align-items-center gap-3 ms-auto">
-            <div class="d-none d-md-flex align-items-center font-mono small bg-light px-3 py-2 rounded-3 border text-muted" 
-                 data-bs-toggle="tooltip" data-bs-placement="bottom" title="Reloj sincronizado en tiempo real.">
-                <i class="fi fi-rr-clock-three text-primary"></i>
-                <span id="headerClock" class="fw-bold text-dark">--:--:--</span>
-            </div>
-            
-            <button class="btn btn-outline-secondary rounded-pill px-3 py-2 d-inline-flex align-items-center" id="btnAudioToggle" 
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Silencia o activa los tonos generados con Web Audio API (teclado, alarmas y chimes).">
-                <i class="fi fi-rr-volume text-primary fs-6" id="audioIcon"></i>
-                <span class="small font-mono fw-bold d-none d-sm-inline ms-1" id="audioLabel">AUDIO ACTIVO</span>
-            </button>
-
-            <button class="btn btn-outline-primary rounded-pill px-3 py-2 d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalHelp"
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Abre la guía de uso clínico explicada paso a paso.">
-                <i class="fi fi-rr-info fs-6"></i>
-                <span class="small fw-bold d-none d-sm-inline ms-1">Guía Rápida</span>
-            </button>
-        </div>
-    </div>
-</header>
-
-<main class="container-fluid px-3 px-xl-4 py-4">
+<div class="container-fluid py-4">
     <div class="row g-4 justify-content-center">
         
-        <!-- LEFT: SImulador IV/IO CONSOLE -->
-        <div class="col-12 col-lg-5 col-xl-5 col-xxl-5 d-flex justify-content-center">
+        <!-- COLUMN 1: PUMP CONSOLE (Left) -->
+        <div class="col-12 col-lg-5 col-xl-5">
             <div class="pump-wrapper">
-                <div class="pump-chassis">
+                
+                <div class="d-flex justify-content-between align-items-center px-2">
+                    <div class="fw-bold fs-5 text-secondary d-flex align-items-center gap-2">
+                        <i class="fi fi-rr-hospitals" style="margin-right: 4px;"></i> SImulador IV/IO
+                    </div>
+                    <span class="badge bg-light text-dark border font-mono">v1.0</span>
+                </div>
+
+                <div class="pump-interior">
                     
-                    <!-- Console Bezel Header -->
-                    <div class="d-flex justify-content-between align-items-center pb-2.5 mb-2.5 border-bottom border-secondary border-opacity-25 px-1">
-                        <div class="d-flex align-items-center">
-                            <i class="fi fi-rr-settings text-primary fs-5"></i>
-                            <span class="fw-bold font-mono text-secondary" style="font-size: 1rem;">CONSOLE</span>
+                    <!-- Mechanical Bay -->
+                    <div class="mech-bay">
+                        <div class="text-center border-bottom border-secondary border-opacity-25 pb-2">
+                            <div class="text-muted font-mono fw-bold mb-1" style="font-size: 0.6rem;">CLOSE LEVER</div>
+                            <div class="lever-switch" id="uiLever" data-bs-toggle="tooltip" title="Palanca de compuerta."></div>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-white text-secondary border font-mono px-2.5 py-1.5" style="font-size: 0.72rem;"
-                                  data-bs-toggle="tooltip" title="Alimentación Eléctrica Dual: Red Hospitalaria AC / Respaldo Batería Li-ion.">AC 110-220V / BATT</span>
-                            <div class="rounded-circle bg-success shadow-sm" id="ledChassisPower" style="width: 14px; height: 14px;"
-                                 data-bs-toggle="tooltip" title="Indicador de estado de la bomba: Verde (Encendida) / Rojo (Apagada)."></div>
+
+                        <div class="tube-chamber" id="uiTube">
+                            <div class="tube-line"></div>
+                            <div class="drop" style="animation-delay: 0s"></div>
+                            <div class="drop" style="animation-delay: 0.3s"></div>
+                            <div class="drop" style="animation-delay: 0.6s"></div>
+                            <div class="cam"></div>
+                            <div class="cam"></div>
+                            <div class="cam"></div>
+                            <div class="cam"></div>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2 mt-auto">
+                            <button class="btn-stacked btn-diag" onclick="triggerAlarm('OCCLUSION')" data-bs-toggle="tooltip" title="Simular oclusión">
+                                <i class="fi fi-rr-cross-circle"></i> Ocluir
+                            </button>
+                            <button class="btn-stacked btn-diag" onclick="triggerAlarm('AIR')" data-bs-toggle="tooltip" title="Simular aire">
+                                <i class="fi fi-rr-wind"></i> Aire
+                            </button>
+                            <button class="btn-stacked btn-diag" onclick="resolveAlarm()" data-bs-toggle="tooltip" title="Normalizar">
+                                <i class="fi fi-rr-check-circle"></i> Normal
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Pump Mechanical & Electronic Core -->
-                    <div class="pump-interior">
-                        <div class="row g-0">
+                    <!-- Console Bay -->
+                    <div class="console-bay">
+                        
+                        <!-- OLED Screen -->
+                        <div class="oled-screen font-mono" id="uiScreen">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold" style="color:var(--oled-cyan); font-size: 0.75rem;">CONSOLE</span>
+                                <span class="fw-bold" id="uiStatus" style="font-size: 0.75rem; color: var(--oled-cyan);">STANDBY</span>
+                            </div>
                             
-                            <!-- Mechanical Tube Bay (28%) -->
-                            <div class="col-3 col-sm-3 pump-bay">
-                                <div>
-                                    <div class="text-center mb-2.5">
-                                        <span class="d-block text-muted font-mono fw-bold mb-1" style="font-size: 0.68rem;">CLOSE LEVER</span>
-                                        <div class="lever-switch lever-closed mx-auto" id="pumpLever" 
-                                             data-bs-toggle="tooltip" data-bs-placement="top" 
-                                             title="Palanca mecánica de seguridad. Debe estar cerrada (verde) para permitir infusión. Si se abre durante la marcha, detiene el equipo."></div>
-                                    </div>
+                            <div class="lcd-drug-title" id="uiDrugName">Solución Salina 0.9%</div>
 
-                                    <div class="tube-chamber mx-auto" id="tubeChamber"
-                                         data-bs-toggle="tooltip" data-bs-placement="right" 
-                                         title="Cámara peristáltica lineal con 4 levas motorizadas y guía de infusión con simulación continua de caída de gotas.">
-                                        <div class="iv-line-groove">
-                                            <div class="drop-droplet" style="animation-delay: 0s;"></div>
-                                            <div class="drop-droplet" style="animation-delay: 0.28s;"></div>
-                                            <div class="drop-droplet" style="animation-delay: 0.56s;"></div>
-                                        </div>
-                                        <div class="d-flex flex-column justify-content-around h-100 align-items-center position-relative" style="z-index: 3;">
-                                            <div class="cam-finger"></div>
-                                            <div class="cam-finger"></div>
-                                            <div class="cam-finger"></div>
-                                            <div class="cam-finger"></div>
-                                        </div>
+                            <div class="row g-2 mb-2 flex-grow-1 align-items-center">
+                                <div class="col-6">
+                                    <div class="lcd-param-box active" onclick="setActiveField('rate')" id="box-rate">
+                                        <div style="font-size: 0.6rem; color:#94a3b8;">TASA (mL/h)</div>
+                                        <div class="fs-4 fw-bold text-white" id="val-rate">100.0</div>
                                     </div>
                                 </div>
-
-                                <!-- SPACIOUS DIAGNOSTIC BAY -->
-                                <div class="diagnostic-card-clean">
-                                    <span class="d-block text-muted font-mono text-uppercase fw-bold text-center mb-1" style="font-size: 0.65rem;">DIAGNÓSTICO</span>
-                                    <span class="badge bg-success-subtle text-success border border-success font-mono d-block py-1.5 text-center mb-1" id="sensorBadge" style="font-size: 0.68rem;">
-                                        PERMEABLE
-                                    </span>
-                                    
-                                    <div class="d-flex flex-column gap-2 mt-1">
-                                        <button class="btn btn-outline-danger diag-action-btn font-mono" id="btnOcclusion" 
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Simula un acodamiento u obstrucción en la vía. Dispara alarma de oclusión.">
-                                            <i class="fi fi-rr-cross-circle"></i> <span>Ocluir</span>
-                                        </button>
-                                        <button class="btn btn-outline-warning diag-action-btn font-mono" id="btnAirLine" 
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Simula una burbuja en el sensor de ultrasonido. Dispara alarma de aire.">
-                                            <i class="fi fi-rr-wind"></i> <span>Aire</span>
-                                        </button>
-                                        <button class="btn btn-outline-success diag-action-btn font-mono" id="btnNormalSensors" 
-                                                data-bs-toggle="tooltip" data-bs-placement="right" title="Restaura los sensores a estado permeable y normal.">
-                                            <i class="fi fi-rr-check"></i> <span>Normal</span>
-                                        </button>
+                                <div class="col-6">
+                                    <div class="lcd-param-box" onclick="setActiveField('dose')" id="box-dose">
+                                        <div style="font-size: 0.6rem; color:#94a3b8;" id="label-dose">DOSIS</div>
+                                        <div class="fs-6 fw-bold text-white" id="val-dose">--</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="lcd-param-box" onclick="setActiveField('vtbi')" id="box-vtbi">
+                                        <div style="font-size: 0.6rem; color:#94a3b8;">VTBI (mL)</div>
+                                        <div class="fs-6 fw-bold text-white" id="val-vtbi">500.0</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="lcd-param-box">
+                                        <div style="font-size: 0.6rem; color:#94a3b8;">VI (mL)</div>
+                                        <div class="fs-6 fw-bold text-white" id="val-vi">0.0</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- OLED Screen & Keypad (72%) -->
-                            <div class="col-9 col-sm-9 pump-console">
-                                
-                                <!-- LCD Display (Stand-alone OLED Window) -->
-                                <div class="lcd-display" id="pumpOled"
-                                     data-bs-toggle="tooltip" data-bs-placement="left" 
-                                     title="Pantalla LCD OLED. Clic directo en TASA, DOSIS o VTBI para escribir nuevos valores numéricos.">
-                                    <div class="d-flex justify-content-between align-items-center border-bottom border-dark border-opacity-75 pb-1.5">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fi fi-rr-water-drop text-info small" id="lcdDropIcon"></i>
-                                            <span class="fw-bold font-mono text-info small" id="lcdStatusText">STANDBY</span>
-                                        </div>
-                                        <span class="font-mono text-muted small" id="lcdClock">00:00:00</span>
-                                    </div>
-
-                                    <div class="my-auto py-2.5" id="oledBody">
-                                        <!-- Dynamic LCD content injected by JavaScript -->
-                                    </div>
-
-                                    <div class="pt-2 border-top border-dark">
-                                        <div class="d-flex justify-content-between font-mono text-secondary small" style="font-size: 0.72rem;">
-                                            <span>PRESIÓN: <strong class="text-white" id="lcdPressureValue">35</strong> mmHg</span>
-                                            <span id="lcdAccessTypeTag" class="text-info fw-bold">IV PERIFÉRICA</span>
-                                        </div>
-                                        <div class="progress bg-dark mt-1.5" style="height: 7px;"
-                                             data-bs-toggle="tooltip" title="Manómetro hidrodinámico en tiempo real (mmHg). Si supera 280 mmHg dispara alarma de oclusión.">
-                                            <div class="progress-bar bg-info" id="lcdPressureBar" role="progressbar" style="width: 12%;"></div>
-                                        </div>
-                                    </div>
+                            <!-- Pressure Bar -->
+                            <div class="mt-auto pt-2 border-top" style="border-color: rgba(255,255,255,0.2) !important;">
+                                <div class="d-flex justify-content-between" style="font-size: 0.6rem; color:#94a3b8;">
+                                    <span>PRES: <span class="text-white" id="val-pres">35</span> mmHg</span>
+                                    <span class="text-white" id="val-access-tag">PIV 20G</span>
                                 </div>
-
-                                <!-- FULLY SEPARATED PHYSICAL SOFTKEY TACTILE BAR -->
-                                <div class="softkey-physical-bar"
-                                     data-bs-toggle="tooltip" data-bs-placement="top" 
-                                     title="Barra de teclas rápidas de acceso directo F1-F4. Totalmente independiente de la pantalla.">
-                                    <div class="softkey-row">
-                                        <button class="softkey-btn font-mono" id="softKeyF1"
-                                                data-bs-toggle="tooltip" title="MODO: Alterna rápidamente entre soluciones y medicamentos disponibles.">
-                                            ▲ MODO
-                                        </button>
-                                        <button class="softkey-btn font-mono" id="softKeyF2"
-                                                data-bs-toggle="tooltip" title="ACCESO: Abre la pestaña de selección de calibres vasculares e intraóseos.">
-                                            ▲ ACCESO
-                                        </button>
-                                        <button class="softkey-btn font-mono" id="softKeyF3"
-                                                data-bs-toggle="tooltip" title="VTBI: Selecciona el campo de volumen total a infundir en pantalla.">
-                                            ▲ VTBI
-                                        </button>
-                                        <button class="softkey-btn font-mono" id="softKeyF4"
-                                                data-bs-toggle="tooltip" title="PURGA: Infunde un bolo transitorio a 800 mL/h durante 3 segundos.">
-                                            ▲ PURGA
-                                        </button>
-                                    </div>
+                                <div style="background: #334155; height: 6px; border-radius: 3px; width: 100%; margin-top: 4px; overflow: hidden;">
+                                    <div id="uiPressureBar" style="height: 100%; background: var(--oled-cyan); width: 10%; transition: width 0.3s;"></div>
                                 </div>
-
-                                <!-- MEMBRANE KEYPAD WITH BREATHABLE PADDING & NO OVERLAP -->
-                                <div class="membrane-enclosure">
-                                    
-                                    <!-- Zone 1: Action Rows -->
-                                    <div class="control-grid-top">
-                                        <button class="m-key m-key-transport m-key-start" id="btnKeyStart"
-                                                data-bs-toggle="tooltip" title="START: Inicia la infusión continua a la velocidad programada.">
-                                            <i class="fi fi-rr-play"></i> <span>START</span>
-                                        </button>
-                                        <button class="m-key m-key-transport m-key-stop" id="btnKeyStop"
-                                                data-bs-toggle="tooltip" title="STOP: Detiene de inmediato la infusión y pasa la bomba a Standby.">
-                                            <i class="fi fi-rr-cross-circle"></i> <span>STOP</span>
-                                        </button>
-                                        <button class="m-key m-key-transport m-key-slate" id="btnKeyPause"
-                                                data-bs-toggle="tooltip" title="PAUSA: Pausa temporalmente el motor conservando el volumen infundido.">
-                                            <i class="fi fi-rr-pause"></i> <span>PAUSA</span>
-                                        </button>
-                                    </div>
-
-                                    <div class="control-grid-top">
-                                        <button class="m-key m-key-transport m-key-power" id="btnKeyPower"
-                                                data-bs-toggle="tooltip" title="ON/OFF: Enciende o apaga la bomba y la pantalla LCD.">
-                                            <i class="fi fi-rr-power"></i> <span>ON/OFF</span>
-                                        </button>
-                                        <button class="m-key m-key-transport m-key-slate" id="btnKeyBolus"
-                                                data-bs-toggle="tooltip" title="BOLUS: Administra un flujo rápido controlado sin modificar la pauta principal.">
-                                            <i class="fi fi-rr-flame"></i> <span>BOLUS</span>
-                                        </button>
-                                        <button class="m-key m-key-transport m-key-silence" id="btnKeySilence"
-                                                data-bs-toggle="tooltip" title="SILENCIO: Silencia el tono de alarma por 2 minutos mientras se solventa la incidencia.">
-                                            <i class="fi fi-rr-bell"></i> <span>SILENCIO</span>
-                                        </button>
-                                    </div>
-
-                                    <!-- Zone 2: Isolated 3-Column Numeric Matrix -->
-                                    <div class="numeric-pad-isolated">
-                                        <button class="m-key m-key-num btn-key-num" data-k="1" data-bs-toggle="tooltip" title="Dígito 1">1</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="2" data-bs-toggle="tooltip" title="Dígito 2">2</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="3" data-bs-toggle="tooltip" title="Dígito 3">3</button>
-
-                                        <button class="m-key m-key-num btn-key-num" data-k="4" data-bs-toggle="tooltip" title="Dígito 4">4</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="5" data-bs-toggle="tooltip" title="Dígito 5">5</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="6" data-bs-toggle="tooltip" title="Dígito 6">6</button>
-
-                                        <button class="m-key m-key-num btn-key-num" data-k="7" data-bs-toggle="tooltip" title="Dígito 7">7</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="8" data-bs-toggle="tooltip" title="Dígito 8">8</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="9" data-bs-toggle="tooltip" title="Dígito 9">9</button>
-
-                                        <button class="m-key m-key-num m-key-clr" id="btnKeyClear" data-bs-toggle="tooltip" title="CLR (CLEAR): Borra los números ingresados para reescribir.">CLR</button>
-                                        <button class="m-key m-key-num btn-key-num" data-k="0" data-bs-toggle="tooltip" title="Dígito 0">0</button>
-                                        <button class="m-key m-key-num btn-key-num fw-bold fs-3" data-k="." data-bs-toggle="tooltip" title="Punto decimal para dosis fraccionadas.">.</button>
-                                    </div>
-
-                                    <!-- Zone 3: Navigation & Confirmation Row -->
-                                    <div class="nav-grid-bottom">
-                                        <button class="m-key m-key-nav m-key-slate" id="btnKeyUp"
-                                                data-bs-toggle="tooltip" title="ARRIBA: Aumenta el valor numérico activo en pantalla.">
-                                            <i class="fi fi-rr-angle-small-up fs-4 btn-icon-only"></i>
-                                        </button>
-                                        <button class="m-key m-key-nav m-key-enter" id="btnKeySelect"
-                                                data-bs-toggle="tooltip" title="ENTER: Confirma y guarda el número digitado.">
-                                            <i class="fi fi-rr-check"></i> <span>ENTER</span>
-                                        </button>
-                                        <button class="m-key m-key-nav m-key-slate" id="btnKeyDown"
-                                                data-bs-toggle="tooltip" title="ABAJO: Disminuye el valor numérico activo en pantalla.">
-                                            <i class="fi fi-rr-angle-small-down fs-4 btn-icon-only"></i>
-                                        </button>
-                                    </div>
-
-                                </div>
-
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Console Base Footer -->
-                    <div class="d-flex justify-content-between align-items-center pt-2.5 px-1 text-muted font-mono" style="font-size: 0.74rem;">
-                        <div>MODO: <strong class="text-secondary" id="footerMode">VOLUMÉTRICO mL/h</strong></div>
-                        <div class="d-flex align-items-center">
-                            <span class="me-1">SEGURIDAD ACTIVA</span> 
-                            <i class="fi fi-rr-shield-check text-success fs-6"></i>
+                        <!-- Softkeys -->
+                        <div class="d-grid gap-1" style="grid-template-columns: repeat(4, 1fr);">
+                            <button class="btn-softkey" onclick="nextDrug()">▲ MODO</button>
+                            <button class="btn-softkey" onclick="document.getElementById('tab-accesos').click()">▲ ACCESO</button>
+                            <button class="btn-softkey" onclick="setActiveField('vtbi')">▲ VTBI</button>
+                            <button class="btn-softkey" onclick="triggerBolus()">▲ PURGA</button>
                         </div>
-                    </div>
 
+                        <!-- Stacked Action Buttons (3x2 Grid) -->
+                        <div class="d-grid gap-2" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="btn-stacked btn-start" onclick="startPump()" data-bs-toggle="tooltip" title="Iniciar">
+                                <i class="fi fi-rr-play"></i> START
+                            </button>
+                            <button class="btn-stacked btn-stop" onclick="stopPump()" data-bs-toggle="tooltip" title="Detener">
+                                <i class="fi fi-rr-square"></i> STOP
+                            </button>
+                            <button class="btn-stacked btn-pause" onclick="pausePump()" data-bs-toggle="tooltip" title="Pausar">
+                                <i class="fi fi-rr-pause"></i> PAUSA
+                            </button>
+                            
+                            <button class="btn-stacked btn-power" onclick="togglePower()" data-bs-toggle="tooltip" title="Encender/Apagar">
+                                <i class="fi fi-rr-power"></i> ON/OFF
+                            </button>
+                            <button class="btn-stacked btn-bolus" onclick="triggerBolus()" data-bs-toggle="tooltip" title="Bolo Rápido">
+                                <i class="fi fi-rr-flame"></i> BOLUS
+                            </button>
+                            <button class="btn-stacked btn-silence" onclick="silenceAlarm()" data-bs-toggle="tooltip" title="Silenciar Alarma">
+                                <i class="fi fi-rr-bell-slash"></i> SILENCIO
+                            </button>
+                        </div>
+
+                        <!-- Isolated Numeric Keypad Grid -->
+                        <div class="keypad-grid font-mono">
+                            <button class="btn-num" onclick="inputNum('1')">1</button>
+                            <button class="btn-num" onclick="inputNum('2')">2</button>
+                            <button class="btn-num" onclick="inputNum('3')">3</button>
+                            <button class="btn-num" onclick="inputNum('4')">4</button>
+                            <button class="btn-num" onclick="inputNum('5')">5</button>
+                            <button class="btn-num" onclick="inputNum('6')">6</button>
+                            <button class="btn-num" onclick="inputNum('7')">7</button>
+                            <button class="btn-num" onclick="inputNum('8')">8</button>
+                            <button class="btn-num" onclick="inputNum('9')">9</button>
+                            <button class="btn-num btn-clr" onclick="clearInput()">CLR</button>
+                            <button class="btn-num" onclick="inputNum('0')">0</button>
+                            <button class="btn-num" onclick="inputNum('.')">.</button>
+                        </div>
+
+                        <!-- Stacked Navigation -->
+                        <div class="d-grid gap-2" style="grid-template-columns: 1fr 1.2fr 1fr;">
+                            <button class="btn-stacked btn-nav" onclick="adjustValue(1)">
+                                <i class="fi fi-rr-angle-up"></i> ARRIBA
+                            </button>
+                            <button class="btn-stacked btn-enter" onclick="applyInput()">
+                                <i class="fi fi-rr-check"></i> ENTER
+                            </button>
+                            <button class="btn-stacked btn-nav" onclick="adjustValue(-1)">
+                                <i class="fi fi-rr-angle-down"></i> ABAJO
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="text-end text-muted font-mono" style="font-size: 0.65rem;">
+                    SEGURIDAD ACTIVA <i class="fi fi-rr-shield-check text-success" style="margin-left: 2px;"></i>
                 </div>
             </div>
         </div>
 
-
-        <!-- RIGHT: CLINICAL WORKSPACE TABS -->
-        <div class="col-12 col-lg-7 col-xl-7 col-xxl-7">
+        <!-- COLUMN 2: CLINICAL WORKSPACE (Right) -->
+        <div class="col-12 col-lg-7 col-xl-7">
             
-            <ul class="nav nav-clinic-tabs mb-3 bg-white p-2 rounded-3 border flex-wrap shadow-xs gap-1" id="clinicTab" role="tablist">
-                <li class="nav-item flex-fill text-center" role="presentation">
-                    <button class="nav-link active w-100 justify-content-center" id="tabAccessBtn" data-bs-toggle="pill" data-bs-target="#paneAccess" type="button" role="tab"
-                            data-bs-toggle="tooltip" title="Paciente, calibres venosos o agujas intraóseas y telemetría de infusión.">
-                        <i class="fi fi-rr-syringe fs-6"></i> <span>Accesos IV / IO</span>
-                    </button>
-                </li>
-                <li class="nav-item flex-fill text-center" role="presentation">
-                    <button class="nav-link w-100 justify-content-center" id="tabDrugsBtn" data-bs-toggle="pill" data-bs-target="#paneDrugs" type="button" role="tab"
-                            data-bs-toggle="tooltip" title="Biblioteca de cristaloides, dextrosas (5%, 10%, 50%) y fármacos críticos con dosificación ponderal.">
-                        <i class="fi fi-rr-capsules fs-6"></i> <span>Medicamentos</span>
-                    </button>
-                </li>
-                <li class="nav-item flex-fill text-center" role="presentation">
-                    <button class="nav-link w-100 justify-content-center" id="tabCalcBtn" data-bs-toggle="pill" data-bs-target="#paneCalc" type="button" role="tab"
-                            data-bs-toggle="tooltip" title="Conversor de gotas/minuto por gravedad a mL/h en bomba y presets KVO.">
-                        <i class="fi fi-rr-calculator fs-6"></i> <span>Calculadora & Gotas</span>
-                    </button>
-                </li>
+            <ul class="nav nav-tabs mb-3" id="mainTab" role="tablist">
+                <li class="nav-item"><button class="nav-link fw-bold text-dark active" id="tab-accesos" data-bs-toggle="tab" data-bs-target="#pane-accesos"><i class="fi fi-rr-syringe" style="margin-right:6px;"></i>Accesos</button></li>
+                <li class="nav-item"><button class="nav-link fw-bold text-dark" id="tab-meds" data-bs-toggle="tab" data-bs-target="#pane-meds"><i class="fi fi-rr-capsules" style="margin-right:6px;"></i>Medicamentos</button></li>
+                <li class="nav-item"><button class="nav-link fw-bold text-dark" id="tab-calc" data-bs-toggle="tab" data-bs-target="#pane-calc"><i class="fi fi-rr-calculator" style="margin-right:6px;"></i>Calculadora</button></li>
             </ul>
 
-            <div class="tab-content" id="clinicTabContent">
-                
-                <!-- TAB 1: ACCESOS IV / IO & PACIENTE -->
-                <div class="tab-pane fade show active" id="paneAccess" role="tabpanel">
-                    
-                    <div class="clinic-card mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-1">
-                            <span class="fw-bold text-slate-800 text-uppercase font-mono small d-flex align-items-center">
-                                <i class="fi fi-rr-heart text-danger fs-5"></i> <span>Paciente & Parámetros Ponderales</span>
-                            </span>
+            <div class="tab-content" id="mainTabContent">
+
+                <!-- Tab Accesos (now includes Patient Info) -->
+                <div class="tab-pane fade show active" id="pane-accesos">
+                    <div class="clinic-card">
+                        
+                        <!-- Integrated Patient Info -->
+                        <div class="row g-3 mb-4 pb-4 border-bottom align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold"><i class="fi fi-rr-id-badge text-primary" style="margin-right:6px;"></i>Nombre del Paciente</label>
+                                <input type="text" class="form-control" placeholder="Ej. Paciente Desconocido">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Peso (kg)</label>
+                                <input type="number" class="form-control fw-bold text-primary font-mono" id="pt-weight" value="70">
+                            </div>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-12 col-md-5">
-                                <label class="form-label text-muted small mb-1.5 fw-bold">Nombre / Ficha Clínica</label>
-                                <input type="text" class="form-control" id="ptName" value="" placeholder="Ingrese nombre del paciente..."
-                                       data-bs-toggle="tooltip" title="Ficha del paciente para control de enfermería y farmacovigilancia.">
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label text-muted small mb-1.5 fw-bold">Peso Corporal <span class="text-danger">*</span></label>
-                                <div class="input-group" data-bs-toggle="tooltip" title="Peso indispensable para el cálculo farmacocinético automático en mcg/kg/min o mg/kg/h.">
-                                    <input type="number" step="0.5" class="form-control fw-bold font-mono text-primary fs-6" id="ptWeight" value="70.0">
-                                    <span class="input-group-text fw-bold">kg</span>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-2">
-                                <label class="form-label text-muted small mb-1.5 fw-bold">Edad</label>
-                                <input type="number" class="form-control font-mono" id="ptAge" value="58"
-                                       data-bs-toggle="tooltip" title="Edad en años.">
-                            </div>
-                            <div class="col-12 col-md-2">
-                                <label class="form-label text-muted small mb-1.5 fw-bold">Servicio</label>
-                                <select class="form-select" id="ptService" data-bs-toggle="tooltip" title="Servicio clínico donde está asignada la bomba.">
-                                    <option value="UCI" selected>UCI</option>
-                                    <option value="URG">Urgencias / Reanimación</option>
-                                    <option value="EMS">Prehospitalario / SAMU</option>
-                                    <option value="QX">Quirófano</option>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0"><i class="fi fi-rr-share-network text-info" style="margin-right:6px;"></i>Matriz de Accesos Vasculares e IO</h6>
+                            <span class="badge bg-light text-dark border" id="ui-current-access">PIV 20G</span>
+                        </div>
+                        
+                        <div class="alert alert-secondary p-2 small mb-3 d-flex align-items-start gap-2" id="alert-access">
+                            <i class="fi fi-rr-info mt-1"></i>
+                            <div id="alert-access-text">Seleccione el acceso vascular/IO.</div>
+                        </div>
+
+                        <!-- Access Grid -->
+                        <div class="row g-2" id="access-container"></div>
+                    </div>
+                </div>
+
+                <!-- Tab Medicamentos -->
+                <div class="tab-pane fade" id="pane-meds">
+                    <div class="clinic-card">
+                        <h6 class="fw-bold mb-3"><i class="fi fi-rr-flask text-success" style="margin-right:6px;"></i>Farmacopea y Soluciones</h6>
+                        <div class="list-group" id="drug-container"></div>
+                    </div>
+                </div>
+
+                <!-- Tab Calculadora -->
+                <div class="tab-pane fade" id="pane-calc">
+                    <div class="clinic-card">
+                        <h6 class="fw-bold mb-3"><i class="fi fi-rr-scale text-warning" style="margin-right:6px;"></i>Conversor Gravedad a Bomba</h6>
+                        
+                        <div class="row g-3 align-items-center mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Factor de Goteo</label>
+                                <select class="form-select font-mono" id="calc-factor">
+                                    <option value="20">Normogotero (20 gtt/mL)</option>
+                                    <option value="60">Microgotero (60 gtt/mL)</option>
+                                    <option value="15">Sangre (15 gtt/mL)</option>
+                                    <option value="10">Macrogotero (10 gtt/mL)</option>
                                 </select>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="clinic-card mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                            <span class="fw-bold text-slate-800 text-uppercase font-mono small d-flex align-items-center">
-                                <i class="fi fi-rr-apps text-info fs-5"></i> <span>Vías Vasculares e Intraóseas (IV / IO)</span>
-                            </span>
-                            <span class="badge bg-secondary font-mono px-3 py-2" id="activeAccessBadge"
-                                  data-bs-toggle="tooltip" title="Acceso actualmente conectado. Determina la presión basal y el caudal máximo seguro.">
-                                20G Rosa (IV Periférica)
-                            </span>
-                        </div>
-
-                        <div class="d-flex gap-2 mb-3 p-2 bg-light rounded-3 category-subtab flex-wrap">
-                            <button class="btn btn-primary flex-fill" data-cat="PIV" id="subtabPIV"
-                                    data-bs-toggle="tooltip" title="Catéteres venosos periféricos (14G a 24G).">
-                                IV Periférica (PIV)
-                            </button>
-                            <button class="btn btn-outline-secondary flex-fill" data-cat="CVC" id="subtabCVC"
-                                    data-bs-toggle="tooltip" title="Catéter Venoso Central Trilumen 7 Fr, PICC y Reservorio Port-a-Cath.">
-                                Vía Central (CVC / PICC)
-                            </button>
-                            <button class="btn btn-outline-secondary flex-fill" data-cat="IO" id="subtabIO"
-                                    data-bs-toggle="tooltip" title="Acceso a la médula ósea en paro cardiorrespiratorio o shock descompensado.">
-                                Intraósea (IO)
-                            </button>
-                            <button class="btn btn-outline-secondary flex-fill" data-cat="MID" id="subtabMID"
-                                    data-bs-toggle="tooltip" title="Línea media de 8 a 20 cm en vena braquial o basílica.">
-                                Línea Media (Midline)
-                            </button>
-                        </div>
-
-                        <div class="row g-3" id="accessCatalogContainer">
-                            <!-- Injected by JavaScript -->
-                        </div>
-
-                        <div class="alert alert-light border mt-3.5 mb-0 p-3.5 d-flex align-items-start" id="vascularSafetyBox">
-                            <i class="fi fi-rr-info text-primary fs-4 mt-0.5" id="vascularSafetyIcon"></i>
-                            <div class="small lh-base" id="vascularSafetyText">
-                                Vía periférica estándar 20G activa. Flujo máximo seguro: 3600 mL/h. Adecuada para cristaloides y fármacos no vesicantes.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="clinic-card">
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                            <span class="fw-bold text-slate-800 text-uppercase font-mono small d-flex align-items-center">
-                                <i class="fi fi-rr-dashboard text-primary fs-5"></i> <span>Telemetría de Infusión & Balance Acumulado</span>
-                            </span>
-                            <button class="btn btn-sm btn-link text-decoration-none p-0 text-muted small fw-bold d-inline-flex align-items-center" id="btnResetTelemetry"
-                                    data-bs-toggle="tooltip" title="Reinicia el acumulador de mililitros infundidos (VI) a 0.0 mL.">
-                                <i class="fi fi-rr-refresh"></i> <span>Reiniciar VI a 0.0 mL</span>
-                            </button>
-                        </div>
-                        <div class="row g-3 text-center font-mono">
-                            <div class="col-4">
-                                <div class="bg-light p-3.5 rounded-3 border" data-bs-toggle="tooltip" title="Volumen total infundido acumulado administrado al paciente.">
-                                    <span class="d-block text-muted small fw-bold mb-1" style="font-size: 0.72rem;">VOL. INFUNDIDO (VI)</span>
-                                    <span class="fs-4 fw-bold text-success" id="telemetryViText">0.0 mL</span>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="bg-light p-3.5 rounded-3 border" data-bs-toggle="tooltip" title="Dosis farmacológica activa en tiempo real según el peso del paciente.">
-                                    <span class="d-block text-muted small fw-bold mb-1" style="font-size: 0.72rem;">DOSIS ACTUAL</span>
-                                    <span class="fs-4 fw-bold text-primary" id="telemetryDoseText">--</span>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="bg-light p-3.5 rounded-3 border" data-bs-toggle="tooltip" title="Tiempo estimado para que termine el volumen programado (VTBI).">
-                                    <span class="d-block text-muted small fw-bold mb-1" style="font-size: 0.72rem;">TIEMPO RESTANTE</span>
-                                    <span class="fs-4 fw-bold text-slate-700" id="telemetryEtaText">--:--:--</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- TAB 2: MEDICAMENTOS -->
-                <div class="tab-pane fade" id="paneDrugs" role="tabpanel">
-                    <div class="clinic-card">
-                        <div class="d-flex justify-content-between align-items-center mb-2.5 flex-wrap gap-2">
-                            <span class="fw-bold text-slate-800 text-uppercase font-mono small d-flex align-items-center">
-                                <i class="fi fi-rr-shield-check text-success fs-5"></i> <span>Biblioteca Farmacológica (Medicamentos)</span>
-                            </span>
-                            <span class="badge bg-success-subtle text-success border border-success font-mono small px-3 py-1.5">
-                                Límites de Seguridad Activos
-                            </span>
-                        </div>
-                        <p class="text-muted small mb-3.5 lh-base">
-                            Cálculo farmacocinético ponderal automático (<strong id="badgePatientWeightEcho">70.0 kg</strong>). Los vasopresores y soluciones hiperosmolares (Dextrosa 50%, KCl) evalúan automáticamente si el acceso seleccionado es compatible para evitar extravasación y necrosis tisular.
-                        </p>
-
-                        <div class="d-flex flex-column gap-3" id="drugCatalogList">
-                            <!-- Injected by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 3: CALCULADORA DE GOTAS & EQUIVALENCIAS -->
-                <div class="tab-pane fade" id="paneCalc" role="tabpanel">
-                    <div class="clinic-card mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                            <span class="fw-bold text-slate-800 text-uppercase font-mono small d-flex align-items-center">
-                                <i class="fi fi-rr-calculator text-primary fs-5"></i> <span>Conversión de Goteo Gravitacional ⇄ Bomba</span>
-                            </span>
-                            <span class="badge bg-info-subtle text-info border border-info font-mono small px-3 py-1.5">Fórmulas Médicas</span>
-                        </div>
-
-                        <div class="row g-3 mb-3.5">
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1.5 fw-bold">Factor de Goteo del Equipo:</label>
-                                <select class="form-select font-mono" id="calcFactor"
-                                        data-bs-toggle="tooltip" title="Gotero por gravedad: Normogotero (20 gtt/mL), Microgotero (60 µgtt/mL), Sangre (15 gtt/mL).">
-                                    <option value="20" selected>Normogotero Estándar (20 gtt/mL)</option>
-                                    <option value="60">Microgotero Pediátrico (60 µgtt/mL)</option>
-                                    <option value="15">Equipo de Sangre / Hemoderivados (15 gtt/mL)</option>
-                                    <option value="10">Macrogotero Quirúrgico (10 gtt/mL)</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1.5 fw-bold">Velocidad Programada en Bomba (mL/h):</label>
-                                <div class="input-group" data-bs-toggle="tooltip" title="Ingresa el flujo para obtener la equivalencia exacta en gotas por minuto.">
-                                    <input type="number" class="form-control font-mono fw-bold text-primary fs-6" id="calcRateInput" value="125">
-                                    <span class="input-group-text fw-bold">mL/h</span>
-                                </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Gotas por minuto deseadas</label>
+                                <input type="number" class="form-control font-mono fw-bold" id="calc-gtt" value="33">
                             </div>
                         </div>
 
-                        <div class="bg-light p-3.5 rounded-3 border mb-3.5">
-                            <div class="row text-center font-mono g-3">
-                                <div class="col-4">
-                                    <span class="d-block text-muted small fw-bold mb-1" style="font-size: 0.72rem;">GOTAS POR MINUTO</span>
-                                    <span class="fs-3 fw-bold text-primary" id="calcResGttMin">42</span>
-                                    <small class="text-muted d-block mt-0.5" style="font-size: 0.72rem;">gtt / min</small>
-                                </div>
-                                <div class="col-4">
-                                    <span class="d-block text-muted small fw-bold mb-1" style="font-size: 0.72rem;">MICROGOTAS / MIN</span>
-                                    <span class="fs-3 fw-bold text-info" id="calcResMicroMin">125</span>
-                                    <small class="text-muted d-block mt-0.5" style="font-size: 0.72rem;">µgtt / min</small>
-                                </div>
-                                <div class="col-4">
-                                    <span class="d-block text-muted small fw-bold mb-1" style="font-size: 0.72rem;">CADENCIA</span>
-                                    <span class="fs-3 fw-bold text-success" id="calcResSecDrop">1.4s</span>
-                                    <small class="text-muted d-block mt-0.5" style="font-size: 0.72rem;">1 gota cada</small>
-                                </div>
-                            </div>
+                        <div class="bg-light border rounded-3 p-3 text-center font-mono mb-3">
+                            <div class="text-muted small mb-1">EQUIVALENCIA EN BOMBA (mL/h)</div>
+                            <div class="fs-1 fw-bold text-primary" id="calc-result">99.0</div>
                         </div>
-
-                        <button class="btn btn-primary w-100 font-mono py-3 d-inline-flex align-items-center justify-content-center" id="btnTransferToPump"
-                                data-bs-toggle="tooltip" title="Carga esta tasa calculada (mL/h) directamente a la pantalla de la bomba.">
-                            <i class="fi fi-rr-play"></i> <span>Cargar esta tasa de flujo (mL/h) en la Bomba</span>
-                        </button>
-                    </div>
-
-                    <div class="clinic-card">
-                        <span class="fw-bold text-slate-800 text-uppercase font-mono d-flex align-items-center mb-1.5 small">
-                            <i class="fi fi-rr-shield-check text-warning fs-5"></i> <span>Protocolos KVO (Keep Vein Open - Vía Permeable)</span>
-                        </span>
-                        <p class="text-muted small mb-3 lh-base">
-                            Flujos mínimos continuos recomendados para evitar que la vía se coagule al finalizar el VTBI.
-                        </p>
-                        <div class="d-flex flex-wrap gap-2.5">
-                            <button class="btn btn-outline-secondary font-mono kvo-btn flex-fill py-2.5" data-kvo="3.0"
-                                    data-bs-toggle="tooltip" title="Adulto Estándar (3.0 mL/h).">
-                                Adulto Estándar (3.0 mL/h)
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary flex-grow-1 fw-bold" onclick="loadCalcToPump()">
+                                <i class="fi fi-rr-download" style="margin-right:6px;"></i>Cargar en Bomba
                             </button>
-                            <button class="btn btn-outline-secondary font-mono kvo-btn flex-fill py-2.5" data-kvo="5.0"
-                                    data-bs-toggle="tooltip" title="Catéter Central CVC (5.0 mL/h).">
-                                Línea Central CVC (5.0 mL/h)
-                            </button>
-                            <button class="btn btn-outline-secondary font-mono kvo-btn flex-fill py-2.5" data-kvo="1.0"
-                                    data-bs-toggle="tooltip" title="Pediátrico / Neonatal (1.0 mL/h).">
-                                Pediátrico / Micro (1.0 mL/h)
-                            </button>
-                            <button class="btn btn-outline-secondary font-mono kvo-btn flex-fill py-2.5" data-kvo="5.0"
-                                    data-bs-toggle="tooltip" title="Vía Intraósea (5.0 mL/h) para mantener permeables los sinusoides medulares.">
-                                Intraósea KVO (5.0 mL/h)
+                            <button class="btn btn-outline-secondary fw-bold" onclick="setKVO()" data-bs-toggle="tooltip" title="Keep Vein Open (3 mL/h)">
+                                Modo KVO
                             </button>
                         </div>
                     </div>
                 </div>
 
-            </div>
-
-        </div>
-    </div>
-</main>
-
-<div class="modal fade" id="modalHelp" tabindex="-1" aria-labelledby="modalHelpLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom py-3 px-4">
-                <h6 class="modal-title fw-bold d-flex align-items-center" id="modalHelpLabel">
-                    <i class="fi fi-rr-info text-primary fs-5"></i> <span>Operación Clínica de la Bomba SImulador IV/IO & Guía de Uso</span>
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body text-secondary small p-4">
-                <div class="row g-4">
-                    <div class="col-md-6 border-end">
-                        <h6 class="text-dark fw-bold mb-2.5">Manejo Básico de la Bomba</h6>
-                        <ul class="ps-3 mb-0 lh-lg">
-                            <li class="mb-2"><strong>Encendido/Apagado:</strong> Presione el botón <span class="badge bg-warning text-dark">ON/OFF</span>.</li>
-                            <li class="mb-2"><strong>Modificar Parámetros:</strong> Clic en la pantalla sobre <strong>TASA</strong>, <strong>VTBI</strong> o <strong>DOSIS</strong>, digite el número con el teclado aislado y pulse <strong>ENTER</strong>.</li>
-                            <li class="mb-2"><strong>Palanca de Bloqueo:</strong> Haga clic en la palanca lateral (*Close Lever*). Si está abierta, la bomba se detiene por seguridad.</li>
-                            <li class="mb-2"><strong>Simulación de Fallas:</strong> Pruebe los botones "Ocluir" o "Aire" y siléncielos con el botón de la campana. Para volver a estado normal, pulse "Normal".</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-dark fw-bold mb-2.5">Conceptos Clave de Infusión</h6>
-                        <ul class="ps-3 mb-0 lh-lg">
-                            <li class="mb-2"><strong>Tasa (Rate mL/h):</strong> Mililitros de solución administrados en una hora.</li>
-                            <li class="mb-2"><strong>VTBI (Volume To Be Infused):</strong> Volumen total en la bolsa de suero. Al agotarse, pasa a modo KVO.</li>
-                            <li class="mb-2"><strong>VI (Volume Infused):</strong> Mililitros acumulados infundidos al paciente.</li>
-                            <li class="mb-2"><strong>Vía Intraósea (IO):</strong> Inserción en la médula ósea cuando no hay venas en situaciones de reanimación crítica.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-top py-2.5 px-4">
-                <button type="button" class="btn btn-primary btn-sm px-4 py-2" data-bs-dismiss="modal">Entendido</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bootstrap 5 Bundle JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
 <script>
-class BiomedicalSoundEngine {
-    constructor() {
-        this.ctx = null;
-        this.muted = false;
-    }
-
-    init() {
-        if (!this.ctx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.ctx = new AudioContext();
-        }
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-    }
-
-    keyBeep(freq = 1150) {
-        if (this.muted) return;
-        this.init();
-        try {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-            gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.035);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.035);
-        } catch (e) {
-            console.warn(e);
-        }
-    }
-
-    alarmChirp() {
-        if (this.muted) return;
-        this.init();
-        try {
-            const now = this.ctx.currentTime;
-            [900, 650].forEach((freq, idx) => {
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(freq, now + idx * 0.12);
-                gain.gain.setValueAtTime(0.07, now + idx * 0.12);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + (idx + 1) * 0.12);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now + idx * 0.12);
-                osc.stop(now + (idx + 1) * 0.12);
-            });
-        } catch (e) {
-            console.warn(e);
-        }
-    }
-
-    startChime() {
-        if (this.muted) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + idx * 0.05);
-            gain.gain.setValueAtTime(0.05, now + idx * 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + (idx + 1) * 0.05);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now + idx * 0.05);
-            osc.stop(now + (idx + 1) * 0.05);
-        });
-    }
-
-    toggleMute() {
-        this.muted = !this.muted;
-        return this.muted;
-    }
-}
-
-const audio = new BiomedicalSoundEngine();
-
-const ACCESS_DATABASE = [
-    // Peripheral IV
-    {
-        id: 'piv_14',
-        category: 'PIV',
-        name: 'Catéter 14G',
-        colorBadge: 'bg-warning-subtle text-warning-emphasis',
-        badgeName: 'Naranja',
-        flowMaxMlMin: 300,
-        baselinePressure: 28,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Acceso venoso periférico de gran calibre. Reanimación masiva de fluidos y politrauma.'
-    },
-    {
-        id: 'piv_16',
-        category: 'PIV',
-        name: 'Catéter 16G',
-        colorBadge: 'bg-secondary-subtle text-secondary',
-        badgeName: 'Gris',
-        flowMaxMlMin: 200,
-        baselinePressure: 30,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Cirugía mayor, shock hipovolémico, administración rápida de fluidos y sangre.'
-    },
-    {
-        id: 'piv_18',
-        category: 'PIV',
-        name: 'Catéter 18G',
-        colorBadge: 'bg-success-subtle text-success',
-        badgeName: 'Verde',
-        flowMaxMlMin: 100,
-        baselinePressure: 32,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Calibre habitual en emergencias para hemocomponentes y tomografía con contraste.'
-    },
-    {
-        id: 'piv_20',
-        category: 'PIV',
-        name: 'Catéter 20G',
-        colorBadge: 'bg-pink text-white',
-        customStyle: 'background-color: #ec4899;',
-        badgeName: 'Rosa',
-        flowMaxMlMin: 60,
-        baselinePressure: 35,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Vía periférica estándar de elección para hospitalización general e hidratación.'
-    },
-    {
-        id: 'piv_22',
-        category: 'PIV',
-        name: 'Catéter 22G',
-        colorBadge: 'bg-info-subtle text-info',
-        badgeName: 'Azul',
-        flowMaxMlMin: 35,
-        baselinePressure: 45,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Venas frágiles, geriatría y pediatría. Flujos moderados.'
-    },
-    {
-        id: 'piv_24',
-        category: 'PIV',
-        name: 'Catéter 24G',
-        colorBadge: 'bg-warning-subtle text-warning',
-        badgeName: 'Amarillo',
-        flowMaxMlMin: 20,
-        baselinePressure: 55,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Neonatos, pediatría y pacientes oncológicos con capital venoso agotado.'
-    },
-
-    // Central Venous Line (CVC)
-    {
-        id: 'cvc_7fr',
-        category: 'CVC',
-        name: 'CVC Trilumen 7 Fr',
-        colorBadge: 'bg-primary text-white',
-        badgeName: 'Subclavio / Yugular',
-        flowMaxMlMin: 180,
-        baselinePressure: 22,
-        isCentralOrIo: true,
-        isIo: false,
-        desc: 'Acceso central directo a vena cava superior. Obligatorio para drogas vasoactivas concentradas y nutrición parenteral.'
-    },
-    {
-        id: 'cvc_picc',
-        category: 'CVC',
-        name: 'PICC Line 4-5 Fr',
-        colorBadge: 'bg-primary-subtle text-primary border border-primary',
-        badgeName: 'PICC Basílica',
-        flowMaxMlMin: 90,
-        baselinePressure: 40,
-        isCentralOrIo: true,
-        isIo: false,
-        desc: 'Catéter central de inserción periférica para terapias de duración intermedia a larga.'
-    },
-    {
-        id: 'cvc_port',
-        category: 'CVC',
-        name: 'Port-a-Cath (Huber 20G)',
-        colorBadge: 'bg-dark text-white',
-        badgeName: 'Reservorio Subcutáneo',
-        flowMaxMlMin: 50,
-        baselinePressure: 38,
-        isCentralOrIo: true,
-        isIo: false,
-        desc: 'Acceso implantado de largo plazo. Requiere punción con aguja Huber.'
-    },
-
-    // Intraosseous Access (IO)
-    {
-        id: 'io_humeral',
-        category: 'IO',
-        name: 'IO Cabeza Humeral (EZ-IO 45mm)',
-        colorBadge: 'bg-warning text-dark',
-        badgeName: 'Amarillo 45mm',
-        flowMaxMlMin: 150,
-        baselinePressure: 75,
-        isCentralOrIo: true,
-        isIo: true,
-        desc: 'Absorción central casi inmediata a la aurícula derecha. Primera elección en PCR y shock descompensado.'
-    },
-    {
-        id: 'io_tibia_adult',
-        category: 'IO',
-        name: 'IO Tibia Proximal Adulto (EZ-IO 25mm)',
-        colorBadge: 'bg-info text-white',
-        badgeName: 'Azul 25mm',
-        flowMaxMlMin: 80,
-        baselinePressure: 85,
-        isCentralOrIo: true,
-        isIo: true,
-        desc: 'Sitio clásico en meseta tibial anteromedial. Resistencia ósea cortical notable.'
-    },
-    {
-        id: 'io_pediatric',
-        category: 'IO',
-        name: 'IO Tibial Pediátrico (EZ-IO 15mm)',
-        colorBadge: 'bg-danger-subtle text-danger border border-danger',
-        badgeName: 'Rosa 15mm',
-        flowMaxMlMin: 35,
-        baselinePressure: 80,
-        isCentralOrIo: true,
-        isIo: true,
-        desc: 'Acceso de rescate pediátrico en colapso vascular (< 39 kg). Compatible con expansores y reanimación.'
-    },
-    {
-        id: 'io_sternal',
-        category: 'IO',
-        name: 'IO Esternal (FAST1)',
-        colorBadge: 'bg-secondary text-white',
-        badgeName: 'Esternón',
-        flowMaxMlMin: 110,
-        baselinePressure: 70,
-        isCentralOrIo: true,
-        isIo: true,
-        desc: 'Acceso esternal de rescate en trauma severo con extremidades comprometidas.'
-    },
-
-    // Midline
-    {
-        id: 'midline_20',
-        category: 'MID',
-        name: 'Línea Media (Midline 20G, 15 cm)',
-        colorBadge: 'bg-teal text-white',
-        customStyle: 'background-color: #0d9488;',
-        badgeName: 'Braquial 20G',
-        flowMaxMlMin: 45,
-        baselinePressure: 38,
-        isCentralOrIo: false,
-        isIo: false,
-        desc: 'Termina en vena axilar (no central). No apta para infusión continua de vasopresores vesicantes concentrados.'
-    }
-];
-
-const DRUG_LIBRARY = [
-    {
-        id: 'primary',
-        name: 'Solución Base (Salina 0.9%)',
-        category: 'Cristaloide',
-        unit: 'mL/h',
-        isDosed: false,
-        concentrationMg: 0,
-        volumeMl: 0,
-        concLabel: '1000 mL Solución Fisiológica 0.9%',
-        defaultVal: 100,
-        hardMax: 1500,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'hartmann',
-        name: 'Solución Ringer Lactato / Hartmann',
-        category: 'Cristaloide Balanceado',
-        unit: 'mL/h',
-        isDosed: false,
-        concentrationMg: 0,
-        volumeMl: 0,
-        concLabel: '1000 mL Solución Balanceada',
-        defaultVal: 125,
-        hardMax: 1500,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'dextrose_5',
-        name: 'Solución Glucosada / Dextrosa al 5%',
-        category: 'Cristaloide / Glucosa',
-        unit: 'mL/h',
-        isDosed: false,
-        concentrationMg: 0,
-        volumeMl: 0,
-        concLabel: 'Dextrosa al 5% (5 g/100 mL - 278 mOsm/L Isoosmolar)',
-        defaultVal: 100,
-        hardMax: 1200,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'dextrose_10',
-        name: 'Solución Glucosada / Dextrosa al 10%',
-        category: 'Cristaloide / Hipertónica',
-        unit: 'mL/h',
-        isDosed: false,
-        concentrationMg: 0,
-        volumeMl: 0,
-        concLabel: 'Dextrosa al 10% (10 g/100 mL - 556 mOsm/L Moderada)',
-        defaultVal: 80,
-        hardMax: 500,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'dextrose_50',
-        name: 'Solución Glucosada / Dextrosa al 50%',
-        category: 'Hipertónica / Rescate',
-        unit: 'mL/h',
-        isDosed: false,
-        concentrationMg: 0,
-        volumeMl: 0,
-        concLabel: 'Dextrosa al 50% (50 g/100 mL - 2775 mOsm/L Hiperosmolar)',
-        defaultVal: 50,
-        hardMax: 250,
-        requiresCentralOrIo: true
-    },
-    {
-        id: 'norepinephrine',
-        name: 'Norepinefrina (Noradrenalina)',
-        category: 'Vasoactivo',
-        unit: 'mcg/kg/min',
-        isDosed: true,
-        concentrationMg: 4,
-        volumeMl: 100,
-        concLabel: '4 mg en 100 mL D5% (40 mcg/mL)',
-        defaultVal: 0.10,
-        softMax: 0.50,
-        hardMax: 1.50,
-        requiresCentralOrIo: true
-    },
-    {
-        id: 'dopamine',
-        name: 'Dopamina',
-        category: 'Inotrópico',
-        unit: 'mcg/kg/min',
-        isDosed: true,
-        concentrationMg: 400,
-        volumeMl: 250,
-        concLabel: '400 mg en 250 mL D5% (1600 mcg/mL)',
-        defaultVal: 5.0,
-        softMax: 20.0,
-        hardMax: 30.0,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'propofol',
-        name: 'Propofol 1%',
-        category: 'Sedante Hipnótico',
-        unit: 'mg/kg/h',
-        isDosed: true,
-        concentrationMg: 500,
-        volumeMl: 50,
-        concLabel: 'Ampolla 10 mg/mL (Frasco 50 mL)',
-        defaultVal: 1.5,
-        softMax: 4.0,
-        hardMax: 6.0,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'fentanyl',
-        name: 'Fentanilo',
-        category: 'Opioide',
-        unit: 'mcg/kg/h',
-        isDosed: true,
-        concentrationMg: 1,
-        volumeMl: 100,
-        concLabel: '1000 mcg en 100 mL SF (10 mcg/mL)',
-        defaultVal: 1.0,
-        softMax: 3.0,
-        hardMax: 5.0,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'insulin',
-        name: 'Insulina Rápida Humana',
-        category: 'Hipoglucemiante',
-        unit: 'UI/h',
-        isDosed: false,
-        concentrationMg: 100,
-        volumeMl: 100,
-        concLabel: '100 UI en 100 mL SF (1 UI/mL)',
-        defaultVal: 3.0,
-        softMax: 15.0,
-        hardMax: 30.0,
-        requiresCentralOrIo: false
-    },
-    {
-        id: 'kcl',
-        name: 'Cloruro de Potasio (KCl Concentrado)',
-        category: 'Electrolito Concentrado',
-        unit: 'mEq/h',
-        isDosed: false,
-        concentrationMg: 40,
-        volumeMl: 250,
-        concLabel: '40 mEq en 250 mL SF (Osmolaridad elevada)',
-        defaultVal: 10.0,
-        softMax: 20.0,
-        hardMax: 40.0,
-        requiresCentralOrIo: true
-    }
-];
-
-const PUMP = {
-    power: true,
-    status: 'STANDBY',
-    alarmCode: null,
-    silencedUntil: 0,
-
-    activeDrugIndex: 0,
-    activeField: 'rate',
-    keyBuffer: '',
-
-    rateMlH: 100.0,
-    doseVal: 0.0,
-    vtbiMl: 500.0,
-    viMl: 0.0,
-    timeRemainingSec: 0,
-
-    leverClosed: true,
-    pressureMmHg: 35,
-
-    access: ACCESS_DATABASE[3] // PIV 20G default
-};
-
-let currentCategoryFilter = 'PIV';
-
-function getWeight() {
-    const el = document.getElementById('ptWeight');
-    const val = parseFloat(el.value);
-    return isNaN(val) || val <= 0 ? 70.0 : val;
-}
-
-function calculateRateFromDose(drug, dose, weight) {
-    if (!drug || !drug.isDosed) return dose;
-    const concMgMl = drug.concentrationMg / drug.volumeMl;
-
-    if (drug.unit === 'mcg/kg/min') {
-        const concMcgMl = concMgMl * 1000;
-        return (dose * weight * 60) / concMcgMl;
-    }
-    if (drug.unit === 'mg/kg/h') {
-        return (dose * weight) / concMgMl;
-    }
-    if (drug.unit === 'mcg/kg/h') {
-        const concMcgMl = concMgMl * 1000;
-        return (dose * weight) / concMcgMl;
-    }
-    return dose;
-}
-
-function calculateDoseFromRate(drug, rate, weight) {
-    if (!drug || !drug.isDosed) return 0;
-    const concMgMl = drug.concentrationMg / drug.volumeMl;
-
-    if (drug.unit === 'mcg/kg/min') {
-        const concMcgMl = concMgMl * 1000;
-        return (rate * concMcgMl) / (weight * 60);
-    }
-    if (drug.unit === 'mg/kg/h') {
-        return (rate * concMgMl) / weight;
-    }
-    if (drug.unit === 'mcg/kg/h') {
-        const concMcgMl = concMgMl * 1000;
-        return (rate * concMcgMl) / weight;
-    }
-    return 0;
-}
-
-function updateEta() {
-    if (PUMP.rateMlH > 0 && PUMP.vtbiMl > 0) {
-        PUMP.timeRemainingSec = Math.round((PUMP.vtbiMl / PUMP.rateMlH) * 3600);
-    } else {
-        PUMP.timeRemainingSec = 0;
-    }
-}
-
-function formatHMS(seconds) {
-    if (seconds <= 0 || isNaN(seconds)) return '00:00:00';
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-}
-
-function renderLcdScreen() {
-    const oled = document.getElementById('pumpOled');
-    const body = document.getElementById('oledBody');
-    const statusText = document.getElementById('lcdStatusText');
-    const dropIcon = document.getElementById('lcdDropIcon');
-
-    if (!PUMP.power) {
-        oled.style.backgroundColor = '#020617';
-        oled.classList.remove('screen-flash-alarm');
-        statusText.textContent = 'POWER OFF';
-        statusText.className = 'fw-bold font-mono small text-secondary';
-        dropIcon.className = 'fi fi-rr-cross-circle text-secondary small';
-        body.innerHTML = `
-            <div class="text-center text-secondary py-3 font-mono">
-                <i class="fi fi-rr-power fs-2 opacity-25 d-block mb-1.5"></i>
-                <div style="font-size: 0.88rem;">SISTEMA APAGADO</div>
-                <div class="text-muted mt-1" style="font-size: 0.74rem;">Presione botón ON/OFF para iniciar</div>
-            </div>
-        `;
-        return;
-    }
-
-    oled.style.backgroundColor = 'var(--oled-bg)';
-    oled.classList.remove('screen-flash-alarm');
-
-    statusText.textContent = PUMP.status;
-    if (PUMP.status === 'RUNNING') {
-        statusText.className = 'fw-bold font-mono small text-success';
-        dropIcon.className = 'fi fi-rr-water-drop text-info small';
-    } else if (PUMP.status === 'ALARM') {
-        statusText.className = 'fw-bold font-mono small text-danger';
-        oled.classList.add('screen-flash-alarm');
-        dropIcon.className = 'fi fi-rr-bell text-danger small';
-    } else if (PUMP.status === 'PAUSED' || PUMP.status === 'KVO') {
-        statusText.className = 'fw-bold font-mono small text-warning';
-        dropIcon.className = 'fi fi-rr-pause text-warning small';
-    } else {
-        statusText.className = 'fw-bold font-mono small text-info';
-        dropIcon.className = 'fi fi-rr-settings text-secondary small';
-    }
-
-    if (PUMP.status === 'ALARM') {
-        let title = 'REVISE SISTEMA';
-        let desc = 'Presione STOP o botón SILENCIO';
-        if (PUMP.alarmCode === 'OCCLUSION') {
-            title = '¡OCLUSIÓN EN VÍA!';
-            desc = 'Presión > 280 mmHg. Verifique tubo acodado o catéter obstruido.';
-        } else if (PUMP.alarmCode === 'AIR_IN_LINE') {
-            title = '¡AIRE EN LÍNEA!';
-            desc = 'Burbuja detectada. Purgue la guía antes de continuar.';
-        } else if (PUMP.alarmCode === 'DOOR_OPEN') {
-            title = '¡PUERTA ABIERTA!';
-            desc = 'Cierre la palanca mecánica (Close Lever) hacia abajo.';
-        } else if (PUMP.alarmCode === 'VTBI_END') {
-            title = '¡VTBI COMPLETADO!';
-            desc = 'Infusión completada. Cambió a modo KVO (Vena permeable).';
-        } else if (PUMP.alarmCode === 'GUARD_LIMIT') {
-            title = '¡LÍMITE EXCEDIDO!';
-            desc = 'Dosis supera límite de seguridad médica estricto.';
-        } else if (PUMP.alarmCode === 'IO_RESISTANCE') {
-            title = '¡RESISTENCIA IO ELEVADA!';
-            desc = 'Vía intraósea requiere flush con bolo salino para desimpactar médula.';
-        }
-
-        body.innerHTML = `
-            <div class="text-center text-danger py-2 font-mono">
-                <i class="fi fi-rr-bell fs-3 d-block mb-1.5"></i>
-                <div class="fw-bold fs-6 lh-sm">${title}</div>
-                <div class="text-white opacity-75 mt-1.5 lh-base" style="font-size: 0.78rem;">${desc}</div>
-            </div>
-        `;
-        return;
-    }
-
-    const drug = DRUG_LIBRARY[PUMP.activeDrugIndex];
-
-    const displayRate = (PUMP.activeField === 'rate' && PUMP.keyBuffer.length > 0)
-        ? PUMP.keyBuffer
-        : PUMP.rateMlH.toFixed(1);
-
-    const displayVtbi = (PUMP.activeField === 'vtbi' && PUMP.keyBuffer.length > 0)
-        ? PUMP.keyBuffer
-        : PUMP.vtbiMl.toFixed(1);
-
-    const displayDose = (PUMP.activeField === 'dose' && PUMP.keyBuffer.length > 0)
-        ? PUMP.keyBuffer
-        : PUMP.doseVal.toFixed(2);
-
-    body.innerHTML = `
-        <div class="d-flex justify-content-between align-items-start gap-2 mb-1.5 pb-2 border-bottom border-dark font-mono">
-            <div class="text-warning fw-bold lcd-drug-title flex-grow-1" title="${drug.name}">
-                ${drug.name}
-            </div>
-            <span class="badge ${drug.isDosed ? 'bg-primary' : 'bg-secondary'} text-white flex-shrink-0" style="font-size: 0.68rem;">
-                ${drug.isDosed ? 'DOSIFICADO' : 'mL/h'}
-            </span>
-        </div>
-
-        <div class="row g-2 align-items-center font-mono my-1">
-            ${drug.isDosed ? `
-            <div class="col-6">
-                <div class="lcd-field text-center ${PUMP.activeField === 'dose' ? 'lcd-field-active' : ''}" onclick="selectField('dose')"
-                     data-bs-toggle="tooltip" title="Dosis farmacológica por peso. Haz clic para modificar con el teclado numérico.">
-                    <span class="d-block text-secondary mb-0.5" style="font-size: 0.68rem;">DOSIS (${drug.unit})</span>
-                    <span class="fw-bold text-white fs-6">${displayDose}</span>
-                </div>
-            </div>
-            ` : ''}
-
-            <div class="${drug.isDosed ? 'col-6' : 'col-7'}">
-                <div class="lcd-field text-center ${PUMP.activeField === 'rate' ? 'lcd-field-active' : ''}" onclick="selectField('rate')"
-                     data-bs-toggle="tooltip" title="Tasa de infusión en mililitros por hora. Haz clic para modificar con el teclado numérico.">
-                    <span class="d-block text-secondary mb-0.5" style="font-size: 0.68rem;">TASA (mL/h)</span>
-                    <span class="fw-bold ${PUMP.status === 'RUNNING' ? 'text-success' : 'text-info'} fs-4">${displayRate}</span>
-                </div>
-            </div>
-
-            <div class="${drug.isDosed ? 'col-12' : 'col-5'}">
-                <div class="lcd-field text-center ${PUMP.activeField === 'vtbi' ? 'lcd-field-active' : ''}" onclick="selectField('vtbi')"
-                     data-bs-toggle="tooltip" title="Volumen Total a Infundir en mL. Haz clic para cambiar cuánto líquido pasará.">
-                    <span class="d-block text-secondary mb-0.5" style="font-size: 0.68rem;">VTBI (mL)</span>
-                    <span class="fw-bold text-white fs-6">${displayVtbi}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-1.5 pt-1.5 border-top border-dark d-flex justify-content-between text-secondary font-mono" style="font-size: 0.74rem;">
-            <span>VI: <strong class="text-white">${PUMP.viMl.toFixed(1)} mL</strong></span>
-            <span>RESTANTE: <strong class="text-warning">${formatHMS(PUMP.timeRemainingSec)}</strong></span>
-        </div>
-    `;
-
-    const pressurePct = Math.min(100, Math.round((PUMP.pressureMmHg / 300) * 100));
-    document.getElementById('lcdPressureValue').textContent = PUMP.pressureMmHg;
-    document.getElementById('lcdAccessTypeTag').textContent = PUMP.access.isIo ? 'ACCESO IO' : (PUMP.access.isCentralOrIo ? 'ACCESO CENTRAL' : 'IV PERIFÉRICA');
-
-    const bar = document.getElementById('lcdPressureBar');
-    bar.style.width = `${pressurePct}%`;
-    if (pressurePct > 75) bar.className = 'progress-bar bg-danger';
-    else if (pressurePct > 45) bar.className = 'progress-bar bg-warning';
-    else bar.className = 'progress-bar bg-info';
-
-    document.getElementById('footerMode').textContent = drug.isDosed ? `${drug.name} (${drug.unit})` : drug.name;
-
-    refreshTooltips();
-}
-
-function evaluateVascularSafety() {
-    const drug = DRUG_LIBRARY[PUMP.activeDrugIndex];
-    const alertBox = document.getElementById('vascularSafetyBox');
-    const alertText = document.getElementById('vascularSafetyText');
-    const alertIcon = document.getElementById('vascularSafetyIcon');
-    const catheterMaxH = PUMP.access.flowMaxMlMin * 60;
-
-    if (drug.hardMax && (drug.isDosed ? PUMP.doseVal : PUMP.rateMlH) > drug.hardMax) {
-        raiseAlarm('GUARD_LIMIT');
-        return;
-    }
-
-    if (PUMP.rateMlH > catheterMaxH) {
-        alertBox.className = 'alert alert-danger border mt-3.5 mb-0 p-3.5 d-flex align-items-start';
-        alertIcon.className = 'fi fi-rr-cross-circle text-danger fs-4 mt-0.5';
-        alertText.innerHTML = `<strong>¡RIESGO DE EXTRAVASACIÓN / SOBREPRESIÓN!</strong> El flujo programado (${PUMP.rateMlH.toFixed(1)} mL/h) excede el caudal límite de ${PUMP.access.name} (${catheterMaxH} mL/h). Reduzca la velocidad o seleccione un catéter de mayor calibre.`;
-        return;
-    }
-
-    if (PUMP.access.isIo) {
-        alertBox.className = 'alert alert-primary border border-primary-subtle mt-3.5 mb-0 p-3.5 d-flex align-items-start';
-        alertIcon.className = 'fi fi-rr-shield-check text-primary fs-4 mt-0.5';
-        alertText.innerHTML = `<strong>ACCESO INTRAÓSEO ACTIVO (${PUMP.access.name}):</strong> Resistencia fisiológica de médula ósea nativa (~${PUMP.access.baselinePressure} mmHg). Permite fármacos vasoactivos, cristaloides y reanimación. Se aconseja bolo previo (flush) con 10 mL de solución salina.`;
-        return;
-    }
-
-    if (drug.requiresCentralOrIo && !PUMP.access.isCentralOrIo) {
-        alertBox.className = 'alert alert-warning border border-warning mt-3.5 mb-0 p-3.5 d-flex align-items-start text-dark';
-        alertIcon.className = 'fi fi-rr-triangle-warning text-warning fs-4 mt-0.5';
-        alertText.innerHTML = `<strong>ADVERTENCIA DE SEGURIDAD VASCULAR:</strong> ${drug.name} es altamente irritante/vesicante. Administrarlo por ${PUMP.access.name} (vía periférica convencional) conlleva riesgo de flebitis química o necrosis tisular por extravasación. Se requiere Catéter Venoso Central (CVC) o vía Intraósea (IO).`;
-        return;
-    }
-
-    alertBox.className = 'alert alert-light border mt-3.5 mb-0 p-3.5 d-flex align-items-start';
-    alertIcon.className = 'fi fi-rr-info text-primary fs-4 mt-0.5';
-    alertText.innerHTML = `Acceso <strong>${PUMP.access.name}</strong> seleccionado. Caudal máximo seguro: ${catheterMaxH} mL/h. Presión basal estimada: ${PUMP.access.baselinePressure} mmHg. Parámetros estables y seguros.`;
-}
-
-function renderAccessCards() {
-    const container = document.getElementById('accessCatalogContainer');
-    container.innerHTML = '';
-
-    const filtered = ACCESS_DATABASE.filter(item => item.category === currentCategoryFilter);
-
-    filtered.forEach(acc => {
-        const isSelected = PUMP.access.id === acc.id;
-        const col = document.createElement('div');
-        col.className = 'col-12 col-md-6';
-
-        col.innerHTML = `
-            <div class="access-card ${isSelected ? 'selected' : ''}" data-id="${acc.id}"
-                 data-bs-toggle="tooltip" title="Clic para seleccionar este acceso vascular. Caudal máximo: ${acc.flowMaxMlMin * 60} mL/h.">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <span class="fw-bold font-mono small d-block text-slate-800">${acc.name}</span>
-                        <span class="text-muted" style="font-size: 0.76rem;">Caudal: <strong>${acc.flowMaxMlMin} mL/min</strong> (${acc.flowMaxMlMin * 60} mL/h)</span>
-                    </div>
-                    <span class="badge ${acc.colorBadge}" style="${acc.customStyle || ''} font-size: 0.7rem;">${acc.badgeName}</span>
-                </div>
-                <p class="text-muted mb-2.5 lh-base" style="font-size: 0.76rem;">${acc.desc}</p>
-                <div class="d-flex justify-content-between align-items-center pt-2 border-top" style="font-size: 0.72rem;">
-                    <span class="font-mono text-secondary">Presión basal: ~${acc.baselinePressure} mmHg</span>
-                    <span class="badge ${acc.isCentralOrIo ? 'bg-success-subtle text-success' : 'bg-light text-muted border'} font-mono" style="font-size: 0.66rem;">
-                        ${acc.isIo ? 'VÍA INTRAÓSEA' : (acc.isCentralOrIo ? 'APTA VASOACTIVOS' : 'SOLO PERIFÉRICA')}
-                    </span>
-                </div>
-            </div>
-        `;
-
-        col.querySelector('.access-card').addEventListener('click', () => {
-            audio.keyBeep(1100);
-            PUMP.access = acc;
-            PUMP.pressureMmHg = acc.baselinePressure;
-            document.getElementById('activeAccessBadge').textContent = `${acc.name} (${acc.badgeName})`;
-            renderAccessCards();
-            evaluateVascularSafety();
-            renderLcdScreen();
-        });
-
-        container.appendChild(col);
-    });
-
-    refreshTooltips();
-}
-
-function setAccessCategory(category) {
-    audio.keyBeep(1200);
-    currentCategoryFilter = category;
+    // Audio API
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
     
-    ['PIV', 'CVC', 'IO', 'MID'].forEach(cat => {
-        const btn = document.getElementById(`subtab${cat}`);
-        if (cat === category) {
-            btn.className = 'btn btn-primary flex-fill';
-        } else {
-            btn.className = 'btn btn-outline-secondary flex-fill';
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new AudioContext();
         }
-    });
-
-    renderAccessCards();
-}
-
-function selectField(field) {
-    audio.keyBeep(1200);
-    PUMP.activeField = field;
-    PUMP.keyBuffer = '';
-    renderLcdScreen();
-}
-
-function inputNumber(val) {
-    if (!PUMP.power) return;
-    audio.keyBeep(1100);
-    if (PUMP.status === 'RUNNING') return;
-
-    if (val === '.' && PUMP.keyBuffer.includes('.')) return;
-    if (PUMP.keyBuffer.length >= 6) return;
-
-    PUMP.keyBuffer += val;
-    renderLcdScreen();
-}
-
-function applyKeyBuffer() {
-    audio.keyBeep(1400);
-    const drug = DRUG_LIBRARY[PUMP.activeDrugIndex];
-    const weight = getWeight();
-
-    if (PUMP.keyBuffer.length > 0) {
-        const val = parseFloat(PUMP.keyBuffer);
-        if (!isNaN(val)) {
-            if (PUMP.activeField === 'rate') {
-                PUMP.rateMlH = Math.max(0.1, val);
-                if (drug.isDosed) {
-                    PUMP.doseVal = calculateDoseFromRate(drug, PUMP.rateMlH, weight);
-                }
-            } else if (PUMP.activeField === 'vtbi') {
-                PUMP.vtbiMl = Math.max(0, val);
-            } else if (PUMP.activeField === 'dose') {
-                PUMP.doseVal = Math.max(0.01, val);
-                PUMP.rateMlH = calculateRateFromDose(drug, PUMP.doseVal, weight);
-            }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
         }
-        PUMP.keyBuffer = '';
     }
 
-    evaluateVascularSafety();
-    updateEta();
-    renderLcdScreen();
-}
-
-function raiseAlarm(code) {
-    PUMP.status = 'ALARM';
-    PUMP.alarmCode = code;
-    audio.alarmChirp();
-    document.getElementById('tubeChamber').classList.remove('is-pumping');
-    document.getElementById('sensorBadge').textContent = 'ALARMA ACTIVA';
-    document.getElementById('sensorBadge').className = 'badge bg-danger-subtle text-danger border border-danger font-mono d-block py-1.5 text-center mb-1';
-    renderLcdScreen();
-}
-
-function resetSensorsNormal() {
-    audio.keyBeep(1200);
-    PUMP.alarmCode = null;
-    PUMP.pressureMmHg = PUMP.access.baselinePressure || 35;
-    document.getElementById('sensorBadge').textContent = 'PERMEABLE';
-    document.getElementById('sensorBadge').className = 'badge bg-success-subtle text-success border border-success font-mono d-block py-1.5 text-center mb-1';
-    if (PUMP.status === 'ALARM') {
-        PUMP.status = 'STANDBY';
-    }
-    renderLcdScreen();
-}
-
-function startInfusion() {
-    if (!PUMP.power) return;
-    if (!PUMP.leverClosed) {
-        raiseAlarm('DOOR_OPEN');
-        return;
-    }
-    if (PUMP.rateMlH <= 0) {
-        audio.keyBeep(450);
-        return;
+    function playTone(freq = 800, type = 'sine', duration = 0.1) {
+        initAudio();
+        if(!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
     }
 
-    if (PUMP.access.isIo && PUMP.rateMlH > 1200) {
-        raiseAlarm('IO_RESISTANCE');
-        return;
-    }
+    // Databases
+    const ACCESS_DB = [
+        { id: 'piv14', name: 'PIV 14G', color: '#f97316', type: 'Peripheral', pres: 25 },
+        { id: 'piv16', name: 'PIV 16G', color: '#94a3b8', type: 'Peripheral', pres: 28 },
+        { id: 'piv18', name: 'PIV 18G', color: '#10b981', type: 'Peripheral', pres: 32 },
+        { id: 'piv20', name: 'PIV 20G', color: '#ec4899', type: 'Peripheral', pres: 35 },
+        { id: 'piv22', name: 'PIV 22G', color: '#38bdf8', type: 'Peripheral', pres: 45 },
+        { id: 'piv24', name: 'PIV 24G', color: '#fde047', type: 'Peripheral', pres: 55 },
+        { id: 'midline', name: 'Línea Media', color: '#0d9488', type: 'Peripheral', pres: 35 },
+        { id: 'cvc', name: 'CVC Trilumen 7Fr', color: '#3b82f6', type: 'Central', pres: 20 },
+        { id: 'picc', name: 'PICC Line', color: '#6366f1', type: 'Central', pres: 38 },
+        { id: 'port', name: 'Port-a-Cath', color: '#475569', type: 'Central', pres: 35 },
+        { id: 'ioH', name: 'IO Humeral (45mm)', color: '#f59e0b', type: 'IO', pres: 75 },
+        { id: 'ioT', name: 'IO Tibial (25mm)', color: '#38bdf8', type: 'IO', pres: 85 },
+        { id: 'ioP', name: 'IO Pediátrica (15mm)', color: '#ec4899', type: 'IO', pres: 95 },
+        { id: 'ioS', name: 'IO Esternal (FAST1)', color: '#64748b', type: 'IO', pres: 65 }
+    ];
 
-    audio.startChime();
-    PUMP.status = 'RUNNING';
-    document.getElementById('tubeChamber').classList.add('is-pumping');
-    document.getElementById('sensorBadge').textContent = 'PERMEABLE';
-    document.getElementById('sensorBadge').className = 'badge bg-success-subtle text-success border border-success font-mono d-block py-1.5 text-center mb-1';
-    updateEta();
-    renderLcdScreen();
-}
+    const DRUG_DB = [
+        { name: 'Solución Salina 0.9%', unit: 'mL/h', vesicant: false },
+        { name: 'Solución Hartmann', unit: 'mL/h', vesicant: false },
+        { name: 'Solución Glucosada / Dextrosa al 5%', unit: 'mL/h', vesicant: false },
+        { name: 'Solución Glucosada / Dextrosa al 10%', unit: 'mL/h', vesicant: false },
+        { name: 'Solución Glucosada / Dextrosa al 50%', unit: 'mL/h', vesicant: true },
+        { name: 'Norepinefrina (4mg/100mL)', unit: 'mcg/kg/min', vesicant: true },
+        { name: 'Dopamina (400mg/250mL)', unit: 'mcg/kg/min', vesicant: false },
+        { name: 'Fentanilo (1000mcg/100mL)', unit: 'mcg/kg/h', vesicant: false },
+        { name: 'Propofol 1%', unit: 'mg/kg/h', vesicant: false },
+        { name: 'Insulina Rápida (100 UI/100mL)', unit: 'UI/h', vesicant: false },
+        { name: 'Cloruro de Potasio (KCl Concentrado)', unit: 'mEq/h', vesicant: true }
+    ];
 
-function stopInfusion() {
-    audio.keyBeep(700);
-    PUMP.status = 'STANDBY';
-    document.getElementById('tubeChamber').classList.remove('is-pumping');
-    renderLcdScreen();
-}
+    // State Engine
+    let STATE = {
+        power: true, running: false, alarm: null, leverClosed: true,
+        accessId: 'piv20', drugIdx: 0, activeField: 'rate', buffer: '',
+        rate: 100.0, dose: 0.0, vtbi: 500.0, vi: 0.0, pres: 35, weight: 70
+    };
 
-function pauseInfusion() {
-    audio.keyBeep(850);
-    if (PUMP.status === 'RUNNING' || PUMP.status === 'PURGE') {
-        PUMP.status = 'PAUSED';
-        document.getElementById('tubeChamber').classList.remove('is-pumping');
-    }
-    renderLcdScreen();
-}
-
-function silenceAlarm() {
-    audio.keyBeep(1000);
-    if (PUMP.status === 'ALARM') {
-        PUMP.silencedUntil = Date.now() + 120000;
-        PUMP.status = 'PAUSED';
-        renderLcdScreen();
-    }
-}
-
-function setDrug(index) {
-    audio.keyBeep(1150);
-    PUMP.activeDrugIndex = index;
-    const drug = DRUG_LIBRARY[index];
-    const weight = getWeight();
-
-    if (drug.isDosed) {
-        PUMP.doseVal = drug.defaultVal;
-        PUMP.rateMlH = calculateRateFromDose(drug, drug.defaultVal, weight);
-        PUMP.activeField = 'dose';
-    } else {
-        PUMP.rateMlH = drug.defaultVal;
-        PUMP.activeField = 'rate';
-    }
-
-    evaluateVascularSafety();
-    updateEta();
-    renderLcdScreen();
-    renderDrugList();
-}
-
-function renderDrugList() {
-    const list = document.getElementById('drugCatalogList');
-    list.innerHTML = '';
-    const weight = getWeight();
-    document.getElementById('badgePatientWeightEcho').textContent = `${weight.toFixed(1)} kg`;
-
-    DRUG_LIBRARY.forEach((d, idx) => {
-        const isSelected = PUMP.activeDrugIndex === idx;
-        const item = document.createElement('div');
-        item.className = `p-3.5 rounded-3 border transition ${isSelected ? 'bg-primary-subtle border-primary text-primary-emphasis' : 'bg-white'}`;
-        
-        let calculatedInfo = '';
-        if (d.isDosed) {
-            const calculatedMlH = calculateRateFromDose(d, d.defaultVal, weight).toFixed(1);
-            calculatedInfo = `<span class="badge bg-light text-primary border font-mono small px-2.5 py-1.5">Dosis sugerida: ${d.defaultVal} ${d.unit} = ${calculatedMlH} mL/h</span>`;
-        } else {
-            calculatedInfo = `<span class="badge bg-light text-secondary border font-mono small px-2.5 py-1.5">Flujo sugerido: ${d.defaultVal} mL/h</span>`;
-        }
-
-        item.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5">
-                <div class="lh-sm">
-                    <div class="fw-bold d-flex align-items-center gap-2 flex-wrap mb-1">
-                        <span class="fs-6">${d.name}</span>
-                        ${d.requiresCentralOrIo ? '<span class="badge bg-danger" style="font-size: 0.68rem;" data-bs-toggle="tooltip" title="Solución hiperosmolar o vasoactivo vesicante: Administrar por Catéter Central o Vía Intraósea.">REQUIERE CVC / IO</span>' : ''}
+    function renderUI() {
+        // Render Access Matrix
+        document.getElementById('access-container').innerHTML = ACCESS_DB.map(a => `
+            <div class="col-6 col-md-4 col-xl-3">
+                <div class="access-item ${STATE.accessId === a.id ? 'active-access' : ''}" onclick="setAccess('${a.id}')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div style="width:12px;height:12px;border-radius:50%;background:${a.color};border:1px solid #000;flex-shrink:0;"></div>
+                        <strong class="small text-truncate">${a.name}</strong>
                     </div>
-                    <small class="text-muted d-block mb-1.5" style="font-size: 0.8rem;">${d.concLabel}</small>
-                    <div>${calculatedInfo}</div>
-                </div>
-                <div class="text-end">
-                    <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-primary'} font-mono py-2 px-3 d-inline-flex align-items-center" style="font-size: 0.8rem;"
-                            data-bs-toggle="tooltip" title="Cargar esta solución directamente en la pantalla de la bomba.">
-                        <i class="fi fi-rr-play"></i> <span>Cargar en Bomba</span>
-                    </button>
+                    <div style="font-size:0.65rem;" class="text-muted">${a.type} | ${a.pres}mmHg</div>
                 </div>
             </div>
-        `;
+        `).join('');
 
-        item.querySelector('button').addEventListener('click', (e) => {
-            e.stopPropagation();
-            setDrug(idx);
-        });
+        // Render Drugs List
+        document.getElementById('drug-container').innerHTML = DRUG_DB.map((d, i) => `
+            <button class="list-group-item list-group-item-action ${STATE.drugIdx === i ? 'active' : ''}" onclick="setDrug(${i})">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div style="font-size:0.85rem;" class="fw-bold">${d.name} ${d.vesicant ? '<span class="badge bg-danger ms-2" style="font-size:0.6rem;">CVC/IO REQ</span>' : ''}</div>
+                    <span class="badge ${STATE.drugIdx === i ? 'bg-light text-dark' : 'bg-secondary'} border">${d.unit}</span>
+                </div>
+            </button>
+        `).join('');
 
-        item.addEventListener('click', () => setDrug(idx));
-        list.appendChild(item);
-    });
-
-    refreshTooltips();
-}
-
-function updateDropCalculator() {
-    const factor = parseFloat(document.getElementById('calcFactor').value) || 20;
-    const rate = parseFloat(document.getElementById('calcRateInput').value) || 0;
-
-    const gttMin = (rate * factor) / 60;
-    const microGttMin = rate;
-    const secDrop = gttMin > 0 ? (60 / gttMin) : 0;
-
-    document.getElementById('calcResGttMin').textContent = Math.round(gttMin);
-    document.getElementById('calcResMicroMin').textContent = Math.round(microGttMin);
-    document.getElementById('calcResSecDrop').textContent = secDrop > 0 ? `${secDrop.toFixed(1)}s` : '--';
-}
-
-let activeTooltips = [];
-function refreshTooltips() {
-    activeTooltips.forEach(t => {
-        try { t.dispose(); } catch (e) {}
-    });
-    activeTooltips = [];
-
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    activeTooltips = tooltipTriggerList.map(el => {
-        return new bootstrap.Tooltip(el, {
-            delay: { show: 200, hide: 100 },
-            trigger: 'hover'
-        });
-    });
-}
-
-setInterval(() => {
-    const timeNow = new Date().toTimeString().split(' ')[0];
-    document.getElementById('headerClock').textContent = timeNow;
-    document.getElementById('lcdClock').textContent = timeNow;
-
-    if (!PUMP.power) return;
-
-    if (PUMP.status === 'RUNNING' || PUMP.status === 'PURGE' || PUMP.status === 'KVO') {
-        const deltaMl = PUMP.rateMlH / 3600;
-        PUMP.viMl += deltaMl;
-        PUMP.vtbiMl = Math.max(0, PUMP.vtbiMl - deltaMl);
-        if (PUMP.timeRemainingSec > 0) PUMP.timeRemainingSec -= 1;
-
-        const baseline = PUMP.access.baselinePressure || 35;
-        const dynamicResistance = (PUMP.rateMlH / (PUMP.access.isIo ? 15 : 25));
-        PUMP.pressureMmHg = Math.min(270, Math.max(20, Math.round(baseline + dynamicResistance + (Math.random() * 4 - 2))));
-
-        if (PUMP.vtbiMl <= 0) {
-            PUMP.vtbiMl = 0;
-            PUMP.rateMlH = PUMP.access.isIo ? 5.0 : 3.0;
-            PUMP.status = 'KVO';
-            raiseAlarm('VTBI_END');
+        // OLED Screen Rendering
+        const scr = document.getElementById('uiScreen');
+        if(!STATE.power) {
+            scr.style.backgroundColor = '#000'; scr.style.color = '#333';
+            document.getElementById('uiStatus').innerText = '';
+            document.getElementById('uiDrugName').innerText = 'OFF';
+            ['val-rate','val-vtbi','val-vi'].forEach(id => document.getElementById(id).innerText = '--');
+            return;
         }
 
-        document.getElementById('telemetryViText').textContent = `${PUMP.viMl.toFixed(1)} mL`;
-        const drug = DRUG_LIBRARY[PUMP.activeDrugIndex];
-        if (drug.isDosed) {
-            document.getElementById('telemetryDoseText').textContent = `${PUMP.doseVal.toFixed(2)} ${drug.unit}`;
+        scr.style.backgroundColor = 'var(--oled-bg)';
+        scr.style.color = 'var(--oled-cyan)';
+        
+        const d = DRUG_DB[STATE.drugIdx];
+        const a = ACCESS_DB.find(x => x.id === STATE.accessId);
+
+        let stat = STATE.running ? 'RUNNING' : 'STANDBY';
+        let sCol = STATE.running ? 'var(--oled-green)' : 'var(--oled-cyan)';
+        if(STATE.alarm) {
+            stat = 'ALARMA: ' + STATE.alarm; sCol = 'var(--oled-red)'; scr.style.backgroundColor = '#450a0a';
+        }
+        document.getElementById('uiStatus').innerText = stat;
+        document.getElementById('uiStatus').style.color = sCol;
+
+        document.getElementById('uiDrugName').innerText = d.name;
+        document.getElementById('label-dose').innerText = `DOSIS (${d.unit})`;
+        document.getElementById('val-access-tag').innerText = a.name;
+        document.getElementById('val-pres').innerText = Math.round(STATE.pres);
+
+        const presPct = Math.min(100, (STATE.pres / 250) * 100);
+        document.getElementById('uiPressureBar').style.width = presPct + '%';
+        document.getElementById('uiPressureBar').style.backgroundColor = presPct > 80 ? 'var(--oled-red)' : 'var(--oled-cyan)';
+
+        ['rate', 'dose', 'vtbi'].forEach(f => document.getElementById(`box-${f}`).classList.toggle('active', STATE.activeField === f));
+
+        const getVal = (f, v) => (STATE.activeField === f && STATE.buffer) ? STATE.buffer : (f==='dose' && d.unit==='mL/h' ? '--' : v.toFixed(f==='dose'?2:1));
+        document.getElementById('val-rate').innerText = getVal('rate', STATE.rate);
+        document.getElementById('val-dose').innerText = getVal('dose', STATE.dose);
+        document.getElementById('val-vtbi').innerText = getVal('vtbi', STATE.vtbi);
+        document.getElementById('val-vi').innerText = STATE.vi.toFixed(1);
+
+        // Security / Clinical Alerts
+        const alertBox = document.getElementById('alert-access');
+        const alertTxt = document.getElementById('alert-access-text');
+        document.getElementById('ui-current-access').innerText = a.name;
+        if (d.vesicant && a.type === 'Peripheral') {
+            alertBox.className = 'alert alert-danger p-2 small mb-3 d-flex align-items-start gap-2';
+            alertTxt.innerHTML = `<strong>¡ALERTA CLÍNICA!</strong> Riesgo de flebitis o necrosis. ${d.name} requiere vía Central o IO.`;
+        } else if (a.type === 'IO') {
+            alertBox.className = 'alert alert-warning p-2 small mb-3 d-flex align-items-start gap-2 text-dark';
+            alertTxt.innerHTML = `<strong>Acceso IO (${a.name}):</strong> Presión basal aumentada detectada.`;
         } else {
-            document.getElementById('telemetryDoseText').textContent = `${PUMP.rateMlH.toFixed(1)} mL/h`;
-        }
-        document.getElementById('telemetryEtaText').textContent = formatHMS(PUMP.timeRemainingSec);
-        renderLcdScreen();
-    } else if (PUMP.status === 'ALARM') {
-        if (Date.now() > PUMP.silencedUntil) {
-            audio.alarmChirp();
+            alertBox.className = 'alert alert-light border p-2 small mb-3 d-flex align-items-start gap-2';
+            alertTxt.innerHTML = `Vascularidad compatible con la terapia actual.`;
         }
     }
-}, 1000);
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Numeric keypad
-    document.querySelectorAll('.btn-key-num').forEach(b => {
-        b.addEventListener('click', () => inputNumber(b.getAttribute('data-k')));
-    });
+    // Input Actions
+    document.getElementById('pt-weight').addEventListener('input', function() { STATE.weight = parseFloat(this.value) || 70; });
+    
+    function setAccess(id) { playTone(900); STATE.accessId = id; STATE.pres = ACCESS_DB.find(x=>x.id===id).pres; renderUI(); }
+    function setDrug(idx) { playTone(900); STATE.drugIdx = idx; STATE.activeField = 'rate'; STATE.buffer = ''; renderUI(); }
+    function nextDrug() { setDrug((STATE.drugIdx + 1) % DRUG_DB.length); }
+    function setActiveField(f) { if(!STATE.power || STATE.running) return; playTone(1000); STATE.activeField = f; STATE.buffer = ''; renderUI(); }
+    
+    function inputNum(n) { if(!STATE.power || STATE.running) return; playTone(1200); if(n==='.' && STATE.buffer.includes('.')) return; if(STATE.buffer.length < 6) STATE.buffer += n; renderUI(); }
+    function clearInput() { if(!STATE.power || STATE.running) return; playTone(800); STATE.buffer = ''; renderUI(); }
+    function applyInput() {
+        if(!STATE.power || STATE.buffer === '') return;
+        playTone(1400);
+        const v = parseFloat(STATE.buffer);
+        if(!isNaN(v)) STATE[STATE.activeField] = v;
+        STATE.buffer = ''; renderUI();
+    }
+    
+    function adjustValue(dir) {
+        if(!STATE.power || STATE.running) return;
+        playTone(1000);
+        let s = (STATE.activeField === 'dose') ? 0.1 : 1.0;
+        STATE[STATE.activeField] = Math.max(0, STATE[STATE.activeField] + (dir*s));
+        if(STATE.activeField==='vtbi') STATE.vtbi = Math.max(0, STATE.vtbi + (dir*s*9));
+        renderUI();
+    }
 
-    document.getElementById('btnKeyClear').addEventListener('click', () => {
-        audio.keyBeep(800);
-        PUMP.keyBuffer = '';
-        renderLcdScreen();
-    });
-
-    document.getElementById('btnKeySelect').addEventListener('click', applyKeyBuffer);
-    document.getElementById('btnKeyStart').addEventListener('click', startInfusion);
-    document.getElementById('btnKeyStop').addEventListener('click', stopInfusion);
-    document.getElementById('btnKeyPause').addEventListener('click', pauseInfusion);
-    document.getElementById('btnKeySilence').addEventListener('click', silenceAlarm);
-
-    // Bolus key
-    document.getElementById('btnKeyBolus').addEventListener('click', () => {
-        if (PUMP.status === 'RUNNING') {
-            audio.keyBeep(1400);
-            const prev = PUMP.rateMlH;
-            PUMP.rateMlH = 750.0;
-            PUMP.status = 'PURGE';
-            renderLcdScreen();
-            setTimeout(() => {
-                PUMP.rateMlH = prev;
-                PUMP.status = 'RUNNING';
-                renderLcdScreen();
-            }, 3000);
+    // Pump Transport Controls
+    function startPump() {
+        if(!STATE.power || STATE.alarm || STATE.rate <= 0) return;
+        if(!STATE.leverClosed) { triggerAlarm('PUERTA ABIERTA'); return; }
+        playTone(1000, 'square', 0.1); setTimeout(()=>playTone(1200, 'square', 0.15), 100);
+        STATE.running = true; document.getElementById('uiTube').classList.add('is-pumping'); renderUI();
+    }
+    function stopPump() { if(!STATE.power) return; playTone(600, 'sawtooth', 0.2); STATE.running = false; document.getElementById('uiTube').classList.remove('is-pumping'); renderUI(); }
+    function pausePump() { if(!STATE.power) return; playTone(800); STATE.running = false; document.getElementById('uiTube').classList.remove('is-pumping'); renderUI(); }
+    function togglePower() { playTone(500); STATE.power = !STATE.power; if(!STATE.power) stopPump(); renderUI(); }
+    
+    function triggerBolus() {
+        if(STATE.running) {
+            playTone(1500, 'sine', 0.5);
+            const r = STATE.rate; STATE.rate = 999; renderUI();
+            setTimeout(()=>{ STATE.rate = r; renderUI(); }, 1500);
         }
+    }
+    function triggerAlarm(c) { if(!STATE.power) return; playTone(400, 'sawtooth', 0.5); STATE.alarm = c; STATE.running = false; document.getElementById('uiTube').classList.remove('is-pumping'); renderUI(); }
+    function resolveAlarm() { if(!STATE.power) return; playTone(1000); STATE.alarm = null; STATE.pres = ACCESS_DB.find(x=>x.id===STATE.accessId).pres; renderUI(); }
+    function silenceAlarm() { playTone(900); }
+
+    document.getElementById('uiLever').addEventListener('click', function() {
+        playTone(600); STATE.leverClosed = !STATE.leverClosed; this.classList.toggle('open', !STATE.leverClosed);
+        if(!STATE.leverClosed && STATE.running) triggerAlarm('PUERTA ABIERTA');
+        if(STATE.leverClosed && STATE.alarm === 'PUERTA ABIERTA') resolveAlarm();
     });
 
-    // Power key
-    document.getElementById('btnKeyPower').addEventListener('click', () => {
-        PUMP.power = !PUMP.power;
-        audio.keyBeep(1000);
-        document.getElementById('ledChassisPower').className = PUMP.power ? 'rounded-circle bg-success shadow-sm' : 'rounded-circle bg-danger shadow-sm';
-        if (!PUMP.power) stopInfusion();
-        renderLcdScreen();
-    });
+    // Calculator Logic
+    function updateCalc() {
+        const factor = parseFloat(document.getElementById('calc-factor').value);
+        const gtt = parseFloat(document.getElementById('calc-gtt').value) || 0;
+        const res = (gtt * 60) / factor;
+        document.getElementById('calc-result').innerText = res.toFixed(1);
+    }
+    document.getElementById('calc-factor').addEventListener('change', updateCalc);
+    document.getElementById('calc-gtt').addEventListener('input', updateCalc);
+    function loadCalcToPump() {
+        playTone(1200);
+        STATE.rate = parseFloat(document.getElementById('calc-result').innerText);
+        STATE.activeField = 'rate'; STATE.buffer = '';
+        renderUI();
+    }
+    function setKVO() { playTone(900); STATE.rate = 3.0; renderUI(); }
 
-    // Navigation arrows
-    document.getElementById('btnKeyUp').addEventListener('click', () => {
-        audio.keyBeep(1250);
-        if (PUMP.activeField === 'rate') PUMP.rateMlH += 1;
-        else if (PUMP.activeField === 'vtbi') PUMP.vtbiMl += 10;
-        else if (PUMP.activeField === 'dose') PUMP.doseVal += 0.05;
-        evaluateVascularSafety();
-        updateEta();
-        renderLcdScreen();
-    });
-
-    document.getElementById('btnKeyDown').addEventListener('click', () => {
-        audio.keyBeep(1050);
-        if (PUMP.activeField === 'rate') PUMP.rateMlH = Math.max(0.1, PUMP.rateMlH - 1);
-        else if (PUMP.activeField === 'vtbi') PUMP.vtbiMl = Math.max(0, PUMP.vtbiMl - 10);
-        else if (PUMP.activeField === 'dose') PUMP.doseVal = Math.max(0.01, PUMP.doseVal - 0.05);
-        evaluateVascularSafety();
-        updateEta();
-        renderLcdScreen();
-    });
-
-    // Softkeys (F1 to F4) in physical bar
-    document.getElementById('softKeyF1').addEventListener('click', () => {
-        setDrug((PUMP.activeDrugIndex + 1) % DRUG_LIBRARY.length);
-    });
-
-    document.getElementById('softKeyF2').addEventListener('click', () => {
-        const accTab = new bootstrap.Tab(document.getElementById('tabAccessBtn'));
-        accTab.show();
-    });
-
-    document.getElementById('softKeyF3').addEventListener('click', () => selectField('vtbi'));
-
-    document.getElementById('softKeyF4').addEventListener('click', () => {
-        if (PUMP.status === 'RUNNING') {
-            audio.keyBeep(1500);
-            const prev = PUMP.rateMlH;
-            PUMP.rateMlH = 800.0;
-            PUMP.status = 'PURGE';
-            renderLcdScreen();
-            setTimeout(() => {
-                PUMP.rateMlH = prev;
-                PUMP.status = 'RUNNING';
-                renderLcdScreen();
-            }, 3000);
+    // Infusion Tick Engine
+    setInterval(() => {
+        if(STATE.running && !STATE.alarm) {
+            const mlSec = STATE.rate / 3600;
+            STATE.vi += mlSec; STATE.vtbi = Math.max(0, STATE.vtbi - mlSec);
+            STATE.pres += (Math.random() - 0.5) * 2;
+            if(STATE.pres > 220) triggerAlarm('OCLUSIÓN');
+            if(STATE.vtbi <= 0) { STATE.vtbi = 0; triggerAlarm('VTBI ALCANZADO (KVO)'); playTone(800,'sine',2); }
+            renderUI();
         }
+    }, 1000);
+
+    // Bootstrap Tooltips Init
+    document.addEventListener("DOMContentLoaded", function() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+        renderUI();
+        updateCalc();
     });
-
-    // Mechanical Tube Clamp Lever
-    const lever = document.getElementById('pumpLever');
-    lever.addEventListener('click', () => {
-        audio.keyBeep(700);
-        PUMP.leverClosed = !PUMP.leverClosed;
-        if (PUMP.leverClosed) {
-            lever.classList.add('lever-closed');
-            if (PUMP.status === 'ALARM' && PUMP.alarmCode === 'DOOR_OPEN') {
-                PUMP.status = 'STANDBY';
-            }
-        } else {
-            lever.classList.remove('lever-closed');
-            if (PUMP.status === 'RUNNING') {
-                raiseAlarm('DOOR_OPEN');
-            }
-        }
-        renderLcdScreen();
-    });
-
-    // Sensor fault buttons in clean vertical stack
-    document.getElementById('btnOcclusion').addEventListener('click', () => raiseAlarm('OCCLUSION'));
-    document.getElementById('btnAirLine').addEventListener('click', () => raiseAlarm('AIR_IN_LINE'));
-    document.getElementById('btnNormalSensors').addEventListener('click', resetSensorsNormal);
-
-    // Audio Mute toggle
-    document.getElementById('btnAudioToggle').addEventListener('click', () => {
-        const isMuted = audio.toggleMute();
-        const icon = document.getElementById('audioIcon');
-        const label = document.getElementById('audioLabel');
-        if (isMuted) {
-            icon.className = 'fi fi-rr-cross-circle text-danger fs-6';
-            label.textContent = 'AUDIO OFF';
-        } else {
-            icon.className = 'fi fi-rr-volume text-primary fs-6';
-            label.textContent = 'AUDIO ACTIVO';
-        }
-    });
-
-    // Access Category Subtabs
-    document.getElementById('subtabPIV').addEventListener('click', () => setAccessCategory('PIV'));
-    document.getElementById('subtabCVC').addEventListener('click', () => setAccessCategory('CVC'));
-    document.getElementById('subtabIO').addEventListener('click', () => setAccessCategory('IO'));
-    document.getElementById('subtabMID').addEventListener('click', () => setAccessCategory('MID'));
-
-    // Patient weight change
-    document.getElementById('ptWeight').addEventListener('input', () => {
-        const drug = DRUG_LIBRARY[PUMP.activeDrugIndex];
-        const weight = getWeight();
-        if (drug.isDosed) {
-            PUMP.rateMlH = calculateRateFromDose(drug, PUMP.doseVal, weight);
-        }
-        updateEta();
-        renderLcdScreen();
-        renderDrugList();
-    });
-
-    // Reset VI
-    document.getElementById('btnResetTelemetry').addEventListener('click', () => {
-        audio.keyBeep(850);
-        PUMP.viMl = 0.0;
-        document.getElementById('telemetryViText').textContent = '0.0 mL';
-    });
-
-    // Drop calculator
-    document.getElementById('calcFactor').addEventListener('change', updateDropCalculator);
-    document.getElementById('calcRateInput').addEventListener('input', updateDropCalculator);
-    document.getElementById('btnTransferToPump').addEventListener('click', () => {
-        const rate = parseFloat(document.getElementById('calcRateInput').value) || 125;
-        PUMP.rateMlH = rate;
-        updateEta();
-        renderLcdScreen();
-        const accessTab = new bootstrap.Tab(document.getElementById('tabAccessBtn'));
-        accessTab.show();
-    });
-
-    // KVO quick selectors
-    document.querySelectorAll('.kvo-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const kvo = parseFloat(btn.getAttribute('data-kvo'));
-            PUMP.rateMlH = kvo;
-            updateEta();
-            renderLcdScreen();
-        });
-    });
-
-    // Physical Keyboard support
-    window.addEventListener('keydown', (e) => {
-        if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-        if (e.key >= '0' && e.key <= '9') {
-            inputNumber(e.key);
-        } else if (e.key === '.') {
-            inputNumber('.');
-        } else if (e.key === 'Enter') {
-            applyKeyBuffer();
-        } else if (e.key === 'Backspace') {
-            PUMP.keyBuffer = PUMP.keyBuffer.slice(0, -1);
-            renderLcdScreen();
-        }
-    });
-
-    // Initial render
-    renderAccessCards();
-    renderDrugList();
-    updateEta();
-    updateDropCalculator();
-    evaluateVascularSafety();
-    renderLcdScreen();
-    refreshTooltips();
-});
 </script>
 </body>
 </html>
