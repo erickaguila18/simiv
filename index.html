@@ -297,6 +297,57 @@
         .pump-wrapper[data-pump="baxter"] .btn-num { border-radius: 8px; box-shadow: 0 2px 0 #94a3b8; }
         .pump-wrapper[data-pump="baxter"] .keypad-grid { background: #eaf0ff; border-color: #93c5fd; }
         .pump-wrapper[data-pump="baxter"] .btn-softkey { background: #1d4ed8; }
+
+        /* Fresenius Kabi Agilia (estilo): carcasa blanco/gris, pantalla clara con acento azul */
+        .pump-wrapper[data-pump="agilia"] {
+            border-color: #64748b;
+            background: linear-gradient(145deg, #ffffff, #f1f5f9);
+            --oled-bg: #f8fafc;
+            --oled-cyan: #0369a1;
+            --oled-green: #15803d;
+            --oled-amber: #a16207;
+            --oled-red: #b91c1c;
+        }
+        .pump-wrapper[data-pump="agilia"] .console-bay { background: #eef2f7; }
+
+        /* ICU Medical Plum 360 / Plum A+ (estilo): acento lavanda/morado característico */
+        .pump-wrapper[data-pump="plum"] {
+            border-color: #9333ea;
+            --oled-bg: #f5f3ff;
+            --oled-cyan: #6d28d9;
+            --oled-green: #15803d;
+            --oled-amber: #b45309;
+            --oled-red: #b91c1c;
+        }
+        .pump-wrapper[data-pump="plum"] .btn-softkey { background: #7c3aed; }
+
+        /* CME/McKinley T34 (estilo): jeringa de infusión ambulatoria, pantalla pequeña ámbar
+           monocromática y controles mínimos (sin pausa ni bolo, con bloqueo físico) */
+        .pump-wrapper[data-pump="t34"] {
+            border-color: #78716c;
+            background: linear-gradient(145deg, #f5f5f4, #e7e5e4);
+            --oled-bg: #1c1917;
+            --oled-cyan: #fbbf24;
+            --oled-green: #fbbf24;
+            --oled-amber: #fbbf24;
+            --oled-red: #f87171;
+        }
+        .pump-wrapper[data-pump="t34"] .oled-screen { min-height: 140px; }
+        .pump-wrapper[data-pump="t34"] .lcd-drug-title { font-size: 0.85rem; }
+
+        /* Smiths Medical Medfusion (estilo): pantalla táctil grande, acentos teal/naranja */
+        .pump-wrapper[data-pump="medfusion"] {
+            border-color: #0d9488;
+            border-radius: 24px;
+            --oled-bg: #042f2e;
+            --oled-cyan: #2dd4bf;
+            --oled-green: #4ade80;
+            --oled-amber: #fb923c;
+            --oled-red: #fb7185;
+        }
+        .pump-wrapper[data-pump="medfusion"] .btn-num { border-radius: 8px; box-shadow: 0 2px 0 #0f766e; }
+        .pump-wrapper[data-pump="medfusion"] .keypad-grid { background: #ecfdf5; border-color: #5eead4; }
+        .pump-wrapper[data-pump="medfusion"] .btn-softkey { background: #0d9488; }
     </style>
 </head>
 <body>
@@ -322,6 +373,10 @@
                         <option value="alaris">BD Alaris™ System (estilo)</option>
                         <option value="braun">B. Braun Infusomat®/Perfusor® Space (estilo)</option>
                         <option value="baxter">Baxter Sigma Spectrum® (estilo)</option>
+                        <option value="agilia">Fresenius Kabi Agilia® (estilo)</option>
+                        <option value="plum">ICU Medical Plum 360®/Plum A+® (estilo)</option>
+                        <option value="t34">CME/McKinley T34® Jeringa (estilo)</option>
+                        <option value="medfusion">Smiths Medical Medfusion® (estilo)</option>
                     </select>
                     <div class="text-muted mt-1" style="font-size:0.58rem; line-height:1.2;">
                         Interfaz inspirada solo con fines de reconocimiento visual/educativo. No es un dispositivo certificado ni está afiliado, patrocinado o avalado por los fabricantes mencionados.
@@ -368,6 +423,9 @@
                         <div class="oled-screen font-mono" id="uiScreen">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="fw-bold" style="color:var(--oled-cyan); font-size: 0.75rem;">CONSOLE</span>
+                                <button class="btn p-0 border-0 d-none" id="btn-lock" onclick="toggleLock()" style="line-height:1;" data-bs-toggle="tooltip" title="Bloquear/Desbloquear teclado (seguridad física)">
+                                    <i class="fi fi-rr-lock" id="icon-lock" style="font-size:0.8rem; color: var(--oled-amber);"></i>
+                                </button>
                                 <span class="fw-bold" id="uiStatus" style="font-size: 0.75rem; color: var(--oled-cyan);">STANDBY</span>
                             </div>
                             
@@ -698,14 +756,15 @@
         power: true, running: false, alarm: null, leverClosed: true,
         accessId: 'piv20', drugIdx: 0, activeField: 'rate', buffer: '',
         rate: 100.0, dose: 0.0, vtbi: 500.0, vi: 0.0, pres: 35, weight: 70,
-        pumpModel: 'generic'
+        pumpModel: 'generic', locked: false
     };
 
     // Catálogo de interfaces de bomba disponibles para practicar reconocimiento visual.
     // "layout" define diferencias estructurales reales entre marcas:
-    //  - 'full'   : botones Start / Stop / Pausa independientes (Genérico, BD Alaris)
-    //  - 'merged' : una sola tecla Start/Stop, sin Pausa separada (B. Braun Space)
-    //  - 'touch'  : pantalla táctil, teclado numérico "plano" (Baxter Sigma Spectrum)
+    //  - 'full'    : botones Start / Stop / Pausa independientes (Genérico, Alaris, Agilia, Plum)
+    //  - 'merged'  : una sola tecla Start/Stop, sin Pausa separada (B. Braun Space)
+    //  - 'touch'   : pantalla táctil, teclado numérico "plano" (Baxter, Medfusion)
+    //  - 'minimal' : sin Pausa ni Bolo, con bloqueo físico de teclado (jeringas ambulatorias, p.ej. T34)
     const PUMP_MODELS = [
         { id: 'generic', name: 'Genérico', layout: 'full',
           labels: { start: 'START', stop: 'STOP', pause: 'PAUSA', power: 'ON/OFF', bolus: 'BOLUS', silence: 'SILENCIO' } },
@@ -714,29 +773,61 @@
         { id: 'braun', name: 'B. Braun Infusomat/Perfusor Space (estilo)', layout: 'merged',
           labels: { startstopRun: 'STOP', startstopStopped: 'START/STOP', power: 'ON/OFF', bolus: 'PURGA', silence: 'SILENCIO' } },
         { id: 'baxter', name: 'Baxter Sigma Spectrum (estilo)', layout: 'touch',
-          labels: { start: 'RUN', stop: 'STOP', pause: 'PAUSE', power: 'ON/OFF', bolus: 'BOLUS', silence: 'MUTE' } }
+          labels: { start: 'RUN', stop: 'STOP', pause: 'PAUSE', power: 'ON/OFF', bolus: 'BOLUS', silence: 'MUTE' } },
+        { id: 'agilia', name: 'Fresenius Kabi Agilia (estilo)', layout: 'full',
+          labels: { start: 'MARCHA', stop: 'PARO', pause: 'PAUSA', power: 'ON/OFF', bolus: 'BOLO', silence: 'SILENCIO' } },
+        { id: 'plum', name: 'ICU Medical Plum 360/Plum A+ (estilo)', layout: 'full',
+          labels: { start: 'RUN', stop: 'STOP', pause: 'HOLD', power: 'ON/OFF', bolus: 'BOLUS', silence: 'SILENCE' } },
+        { id: 't34', name: 'CME/McKinley T34 Jeringa (estilo)', layout: 'minimal', hasLock: true,
+          labels: { start: 'START', stop: 'STOP', power: 'ON/OFF', silence: 'SILENCIO' } },
+        { id: 'medfusion', name: 'Smiths Medical Medfusion (estilo)', layout: 'touch',
+          labels: { start: 'START', stop: 'STOP', pause: 'PAUSE', power: 'ON/OFF', bolus: 'BOLUS', silence: 'SILENCE' } }
     ];
+
+    function toggleLock() {
+        STATE.locked = !STATE.locked;
+        playTone(STATE.locked ? 600 : 900);
+        renderUI();
+    }
+
+    // Guardia usada por las acciones de programación cuando el modelo actual tiene
+    // bloqueo físico de teclado activo (p.ej. jeringas ambulatorias tipo T34).
+    function isInputLocked() {
+        if (STATE.locked) {
+            const st = document.getElementById('uiStatus');
+            st.innerText = 'BLOQUEADO 🔒';
+            st.style.color = 'var(--oled-red)';
+            setTimeout(renderUI, 900);
+            return true;
+        }
+        return false;
+    }
 
     function toggleStartStop() { if (STATE.running) stopPump(); else startPump(); }
 
     function applyPumpModel(id) {
         const model = PUMP_MODELS.find(m => m.id === id) || PUMP_MODELS[0];
         STATE.pumpModel = model.id;
+        STATE.locked = false;
         document.querySelector('.pump-wrapper').dataset.pump = model.id;
 
         const merged = model.layout === 'merged';
+        const minimal = model.layout === 'minimal';
         document.getElementById('btn-start').classList.toggle('d-none', merged);
         document.getElementById('btn-stop').classList.toggle('d-none', merged);
-        document.getElementById('btn-pause').classList.toggle('d-none', merged);
+        document.getElementById('btn-pause').classList.toggle('d-none', merged || minimal);
+        document.getElementById('btn-bolus').classList.toggle('d-none', minimal && !model.labels.bolus);
         document.getElementById('btn-startstop').classList.toggle('d-none', !merged);
+        document.getElementById('btn-lock').classList.toggle('d-none', !model.hasLock);
+        document.getElementById('icon-lock').className = 'fi fi-rr-lock';
 
         if (!merged) {
             document.getElementById('lbl-start').innerText = model.labels.start;
             document.getElementById('lbl-stop').innerText = model.labels.stop;
-            document.getElementById('lbl-pause').innerText = model.labels.pause;
+            if (model.labels.pause) document.getElementById('lbl-pause').innerText = model.labels.pause;
         }
         document.getElementById('lbl-power').innerText = model.labels.power;
-        document.getElementById('lbl-bolus').innerText = model.labels.bolus;
+        if (model.labels.bolus) document.getElementById('lbl-bolus').innerText = model.labels.bolus;
         document.getElementById('lbl-silence').innerText = model.labels.silence;
 
         playTone(700);
@@ -858,8 +949,9 @@
         }
     });
     
-    function setAccess(id) { playTone(900); STATE.accessId = id; STATE.pres = ACCESS_DB.find(x=>x.id===id).pres; renderUI(); }
+    function setAccess(id) { if (isInputLocked()) return; playTone(900); STATE.accessId = id; STATE.pres = ACCESS_DB.find(x=>x.id===id).pres; renderUI(); }
     function setDrug(idx) {
+        if (isInputLocked()) return;
         playTone(900);
         STATE.drugIdx = idx;
         STATE.activeField = 'rate';
@@ -872,12 +964,12 @@
         renderUI();
     }
     function nextDrug() { setDrug((STATE.drugIdx + 1) % DRUG_DB.length); }
-    function setActiveField(f) { if(!STATE.power || STATE.running) return; playTone(1000); STATE.activeField = f; STATE.buffer = ''; renderUI(); }
+    function setActiveField(f) { if(!STATE.power || STATE.running || isInputLocked()) return; playTone(1000); STATE.activeField = f; STATE.buffer = ''; renderUI(); }
     
-    function inputNum(n) { if(!STATE.power || STATE.running) return; playTone(1200); if(n==='.' && STATE.buffer.includes('.')) return; if(STATE.buffer.length < 6) STATE.buffer += n; renderUI(); }
+    function inputNum(n) { if(!STATE.power || STATE.running || isInputLocked()) return; playTone(1200); if(n==='.' && STATE.buffer.includes('.')) return; if(STATE.buffer.length < 6) STATE.buffer += n; renderUI(); }
     function clearInput() { if(!STATE.power || STATE.running) return; playTone(800); STATE.buffer = ''; renderUI(); }
     function applyInput() {
-        if(!STATE.power || STATE.running || STATE.buffer === '') return;
+        if(!STATE.power || STATE.running || STATE.buffer === '' || isInputLocked()) return;
         playTone(1400);
         const v = Math.max(0, parseFloat(STATE.buffer));
         if(!isNaN(v)) {
@@ -889,7 +981,7 @@
     }
     
     function adjustValue(dir) {
-        if(!STATE.power || STATE.running) return;
+        if(!STATE.power || STATE.running || isInputLocked()) return;
         playTone(1000);
         // Paso por campo: la dosis usa incrementos finos (0.1), el VTBI incrementos de 10 mL,
         // el resto (tasa) incrementos de 1 mL/h. Antes el VTBI sumaba dos veces (bug).
