@@ -142,6 +142,7 @@
             box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
         }
 
+        /* Multi-line Title Support */
         .lcd-drug-title {
             color: var(--oled-amber);
             font-size: 0.95rem;
@@ -169,7 +170,7 @@
             border-color: var(--oled-cyan);
         }
 
-        /* STACKED BUTTONS (Icon top, Text bottom) to avoid text collision */
+        /* STACKED BUTTONS (Icon top, Text bottom) */
         .btn-stacked {
             display: flex;
             flex-direction: column;
@@ -254,10 +255,51 @@
         .access-item.active-access { border-color: #0ea5e9; background: #f0f9ff; box-shadow: 0 0 0 1px #0ea5e9; }
         
         i.fi { line-height: 1; vertical-align: middle; }
+
+        /* ===== Temas por modelo de bomba (solo estética/estructura, misma lógica clínica) ===== */
+
+        /* BD Alaris™ (estilo): pantalla clara tipo LCD color, carcasa con acento morado/teal */
+        .pump-wrapper[data-pump="alaris"] {
+            border-color: #7c3aed;
+            --oled-bg: #eef2ff;
+            --oled-cyan: #1e3a8a;
+            --oled-green: #15803d;
+            --oled-amber: #b45309;
+            --oled-red: #b91c1c;
+        }
+        .pump-wrapper[data-pump="alaris"] .oled-screen { box-shadow: inset 0 0 10px rgba(0,0,0,0.08); }
+
+        /* B. Braun Infusomat/Perfusor Space (estilo): carcasa blanca/azul, pantalla monocroma verdosa */
+        .pump-wrapper[data-pump="braun"] {
+            border-color: #0ea5e9;
+            background: linear-gradient(145deg, #ffffff, #eaf6ff);
+            --oled-bg: #06210f;
+            --oled-cyan: #4ade80;
+            --oled-green: #86efac;
+            --oled-amber: #fde047;
+            --oled-red: #f87171;
+        }
+        .pump-wrapper[data-pump="braun"] #btn-startstop.btn-stop { background:#ef4444; box-shadow:0 4px 0 #b91c1c; }
+        /* Tecla única Start/Stop ocupa el ancho de las 3 columnas, como en el equipo real */
+        .pump-wrapper[data-pump="braun"] #btn-startstop { grid-column: 1 / span 3; }
+
+        /* Baxter Sigma Spectrum (estilo): pantalla táctil, sin teclado numérico "físico" circular */
+        .pump-wrapper[data-pump="baxter"] {
+            border-color: #1d4ed8;
+            border-radius: 28px;
+            --oled-bg: #0b1220;
+            --oled-cyan: #60a5fa;
+            --oled-green: #4ade80;
+            --oled-amber: #fbbf24;
+            --oled-red: #f87171;
+        }
+        .pump-wrapper[data-pump="baxter"] .oled-screen { border-radius: 18px; }
+        .pump-wrapper[data-pump="baxter"] .btn-num { border-radius: 8px; box-shadow: 0 2px 0 #94a3b8; }
+        .pump-wrapper[data-pump="baxter"] .keypad-grid { background: #eaf0ff; border-color: #93c5fd; }
+        .pump-wrapper[data-pump="baxter"] .btn-softkey { background: #1d4ed8; }
     </style>
 </head>
 <body>
-
 
 <div class="container-fluid py-4">
     <div class="row g-4 justify-content-center">
@@ -270,7 +312,20 @@
                     <div class="fw-bold fs-5 text-secondary d-flex align-items-center gap-2">
                         <i class="fi fi-rr-hospitals" style="margin-right: 4px;"></i> SImulador IV/IO
                     </div>
-                    <span class="badge bg-light text-dark border font-mono">v1.0</span>
+                    <span class="badge bg-light text-dark border font-mono">v1.1</span>
+                </div>
+
+                <div class="px-2">
+                    <label class="form-label small fw-bold mb-1">Modelo de bomba (interfaz a practicar)</label>
+                    <select class="form-select form-select-sm font-mono" id="pumpModelSelect" onchange="applyPumpModel(this.value)">
+                        <option value="generic">Genérico (estilo educativo)</option>
+                        <option value="alaris">BD Alaris™ System (estilo)</option>
+                        <option value="braun">B. Braun Infusomat®/Perfusor® Space (estilo)</option>
+                        <option value="baxter">Baxter Sigma Spectrum® (estilo)</option>
+                    </select>
+                    <div class="text-muted mt-1" style="font-size:0.58rem; line-height:1.2;">
+                        Interfaz inspirada solo con fines de reconocimiento visual/educativo. No es un dispositivo certificado ni está afiliado, patrocinado o avalado por los fabricantes mencionados.
+                    </div>
                 </div>
 
                 <div class="pump-interior">
@@ -294,10 +349,10 @@
                         </div>
 
                         <div class="d-flex flex-column gap-2 mt-auto">
-                            <button class="btn-stacked btn-diag" onclick="triggerAlarm('OCCLUSION')" data-bs-toggle="tooltip" title="Simular oclusión">
+                            <button class="btn-stacked btn-diag" onclick="triggerAlarm('OCLUSIÓN')" data-bs-toggle="tooltip" title="Simular oclusión">
                                 <i class="fi fi-rr-cross-circle"></i> Ocluir
                             </button>
-                            <button class="btn-stacked btn-diag" onclick="triggerAlarm('AIR')" data-bs-toggle="tooltip" title="Simular aire">
+                            <button class="btn-stacked btn-diag" onclick="triggerAlarm('AIRE EN LÍNEA')" data-bs-toggle="tooltip" title="Simular aire">
                                 <i class="fi fi-rr-wind"></i> Aire
                             </button>
                             <button class="btn-stacked btn-diag" onclick="resolveAlarm()" data-bs-toggle="tooltip" title="Normalizar">
@@ -317,6 +372,11 @@
                             </div>
                             
                             <div class="lcd-drug-title" id="uiDrugName">Solución Salina 0.9%</div>
+
+                            <div class="d-flex justify-content-between mb-2" style="font-size:0.6rem; color:#94a3b8;" id="uiConcRow">
+                                <span id="uiConcText"></span>
+                                <span>PESO: <span class="text-white" id="uiWeightTag">70</span> kg</span>
+                            </div>
 
                             <div class="row g-2 mb-2 flex-grow-1 align-items-center">
                                 <div class="col-6">
@@ -367,24 +427,28 @@
 
                         <!-- Stacked Action Buttons (3x2 Grid) -->
                         <div class="d-grid gap-2" style="grid-template-columns: repeat(3, 1fr);">
-                            <button class="btn-stacked btn-start" onclick="startPump()" data-bs-toggle="tooltip" title="Iniciar">
-                                <i class="fi fi-rr-play"></i> START
+                            <button class="btn-stacked btn-start" id="btn-start" onclick="startPump()" data-bs-toggle="tooltip" title="Iniciar infusión">
+                                <i class="fi fi-rr-play"></i> <span id="lbl-start">START</span>
                             </button>
-                            <button class="btn-stacked btn-stop" onclick="stopPump()" data-bs-toggle="tooltip" title="Detener">
-                                <i class="fi fi-rr-square"></i> STOP
+                            <button class="btn-stacked btn-stop" id="btn-stop" onclick="stopPump()" data-bs-toggle="tooltip" title="Detener infusión">
+                                <i class="fi fi-rr-square"></i> <span id="lbl-stop">STOP</span>
                             </button>
-                            <button class="btn-stacked btn-pause" onclick="pausePump()" data-bs-toggle="tooltip" title="Pausar">
-                                <i class="fi fi-rr-pause"></i> PAUSA
+                            <button class="btn-stacked btn-pause" id="btn-pause" onclick="pausePump()" data-bs-toggle="tooltip" title="Pausar temporalmente">
+                                <i class="fi fi-rr-pause"></i> <span id="lbl-pause">PAUSA</span>
                             </button>
-                            
-                            <button class="btn-stacked btn-power" onclick="togglePower()" data-bs-toggle="tooltip" title="Encender/Apagar">
-                                <i class="fi fi-rr-power"></i> ON/OFF
+                            <!-- Botón combinado: algunos modelos (p. ej. B. Braun Space) usan una sola tecla Start/Stop -->
+                            <button class="btn-stacked btn-start d-none" id="btn-startstop" onclick="toggleStartStop()" data-bs-toggle="tooltip" title="Iniciar/Detener infusión">
+                                <i class="fi fi-rr-play" id="icon-startstop"></i> <span id="lbl-startstop">START/STOP</span>
                             </button>
-                            <button class="btn-stacked btn-bolus" onclick="triggerBolus()" data-bs-toggle="tooltip" title="Bolo Rápido">
-                                <i class="fi fi-rr-flame"></i> BOLUS
+
+                            <button class="btn-stacked btn-power" id="btn-power" onclick="togglePower()" data-bs-toggle="tooltip" title="Encender/Apagar (Detiene animación)">
+                                <i class="fi fi-rr-power"></i> <span id="lbl-power">ON/OFF</span>
                             </button>
-                            <button class="btn-stacked btn-silence" onclick="silenceAlarm()" data-bs-toggle="tooltip" title="Silenciar Alarma">
-                                <i class="fi fi-rr-bell-slash"></i> SILENCIO
+                            <button class="btn-stacked btn-bolus" id="btn-bolus" onclick="triggerBolus()" data-bs-toggle="tooltip" title="Bolo Rápido">
+                                <i class="fi fi-rr-flame"></i> <span id="lbl-bolus">BOLUS</span>
+                            </button>
+                            <button class="btn-stacked btn-silence" id="btn-silence" onclick="silenceAlarm()" data-bs-toggle="tooltip" title="Silenciar Alarma">
+                                <i class="fi fi-rr-bell-slash"></i> <span id="lbl-silence">SILENCIO</span>
                             </button>
                         </div>
 
@@ -424,7 +488,6 @@
                 </div>
             </div>
         </div>
-
         <!-- COLUMN 2: CLINICAL WORKSPACE (Right) -->
         <div class="col-12 col-lg-7 col-xl-7">
             
@@ -436,7 +499,7 @@
 
             <div class="tab-content" id="mainTabContent">
 
-                <!-- Tab Accesos (now includes Patient Info) -->
+                <!-- Tab Accesos (Patient Info is here!) -->
                 <div class="tab-pane fade show active" id="pane-accesos">
                     <div class="clinic-card">
                         
@@ -519,7 +582,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Audio API
+    // Audio API Setup
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
     
@@ -547,7 +610,7 @@
         osc.stop(audioCtx.currentTime + duration);
     }
 
-    // Databases
+    // Comprehensive Databases
     const ACCESS_DB = [
         { id: 'piv14', name: 'PIV 14G', color: '#f97316', type: 'Peripheral', pres: 25 },
         { id: 'piv16', name: 'PIV 16G', color: '#94a3b8', type: 'Peripheral', pres: 28 },
@@ -565,28 +628,127 @@
         { id: 'ioS', name: 'IO Esternal (FAST1)', color: '#64748b', type: 'IO', pres: 65 }
     ];
 
+    // "concentration" = cantidad del numerador de la unidad de dosis por cada mL de la mezcla.
+    // Es el dato que un smart-pump real usa para convertir dosis <-> tasa (mL/h).
     const DRUG_DB = [
-        { name: 'Solución Salina 0.9%', unit: 'mL/h', vesicant: false },
-        { name: 'Solución Hartmann', unit: 'mL/h', vesicant: false },
-        { name: 'Solución Glucosada / Dextrosa al 5%', unit: 'mL/h', vesicant: false },
-        { name: 'Solución Glucosada / Dextrosa al 10%', unit: 'mL/h', vesicant: false },
-        { name: 'Solución Glucosada / Dextrosa al 50%', unit: 'mL/h', vesicant: true },
-        { name: 'Norepinefrina (4mg/100mL)', unit: 'mcg/kg/min', vesicant: true },
-        { name: 'Dopamina (400mg/250mL)', unit: 'mcg/kg/min', vesicant: false },
-        { name: 'Fentanilo (1000mcg/100mL)', unit: 'mcg/kg/h', vesicant: false },
-        { name: 'Propofol 1%', unit: 'mg/kg/h', vesicant: false },
-        { name: 'Insulina Rápida (100 UI/100mL)', unit: 'UI/h', vesicant: false },
-        { name: 'Cloruro de Potasio (KCl Concentrado)', unit: 'mEq/h', vesicant: true }
+        { name: 'Solución Salina 0.9%', unit: 'mL/h', vesicant: false, concentration: null },
+        { name: 'Solución Hartmann', unit: 'mL/h', vesicant: false, concentration: null },
+        { name: 'Solución Glucosada / Dextrosa al 5%', unit: 'mL/h', vesicant: false, concentration: null },
+        { name: 'Solución Glucosada / Dextrosa al 10%', unit: 'mL/h', vesicant: false, concentration: null },
+        { name: 'Solución Glucosada / Dextrosa al 50%', unit: 'mL/h', vesicant: true, concentration: null },
+        // 4 mg = 4000 mcg en 100 mL -> 40 mcg/mL
+        { name: 'Norepinefrina (4mg/100mL)', unit: 'mcg/kg/min', vesicant: true, concentration: 40, concUnit: 'mcg/mL' },
+        // 400 mg en 250 mL -> 1600 mcg/mL
+        { name: 'Dopamina (400mg/250mL)', unit: 'mcg/kg/min', vesicant: false, concentration: 1600, concUnit: 'mcg/mL' },
+        // 1000 mcg en 100 mL -> 10 mcg/mL
+        { name: 'Fentanilo (1000mcg/100mL)', unit: 'mcg/kg/h', vesicant: false, concentration: 10, concUnit: 'mcg/mL' },
+        // Propofol 1% = 1 g/100 mL = 10 mg/mL
+        { name: 'Propofol 1%', unit: 'mg/kg/h', vesicant: false, concentration: 10, concUnit: 'mg/mL' },
+        // 100 UI en 100 mL -> 1 UI/mL
+        { name: 'Insulina Rápida (100 UI/100mL)', unit: 'UI/h', vesicant: false, concentration: 1, concUnit: 'UI/mL' },
+        // Preparación diluida estándar de ejemplo: 20 mEq en 100 mL -> 0.2 mEq/mL.
+        // (Nunca se administra en bolo/sin diluir; aquí se asume ya diluido para la bomba)
+        { name: 'Cloruro de Potasio (20mEq/100mL diluido)', unit: 'mEq/h', vesicant: true, concentration: 0.2, concUnit: 'mEq/mL' }
     ];
+
+    // --- Motor de conversión Dosis <-> Tasa (mL/h) ---
+    function isWeightBased(d) { return d.unit !== 'mL/h'; }
+
+    function doseToRate(dose, drug, weight) {
+        if (!isWeightBased(drug) || !drug.concentration || !weight) return null;
+        switch (drug.unit) {
+            case 'mcg/kg/min': return (dose * weight * 60) / drug.concentration;
+            case 'mcg/kg/h':
+            case 'mg/kg/h':    return (dose * weight) / drug.concentration;
+            case 'UI/h':
+            case 'mEq/h':      return dose / drug.concentration;
+            default: return null;
+        }
+    }
+
+    function rateToDose(rate, drug, weight) {
+        if (!isWeightBased(drug) || !drug.concentration || !weight) return null;
+        switch (drug.unit) {
+            case 'mcg/kg/min': return (rate * drug.concentration) / (weight * 60);
+            case 'mcg/kg/h':
+            case 'mg/kg/h':    return (rate * drug.concentration) / weight;
+            case 'UI/h':
+            case 'mEq/h':      return rate * drug.concentration;
+            default: return null;
+        }
+    }
+
+    // Mantiene sincronizados dosis y tasa cuando cambia uno de los dos campos.
+    // MAX_RATE es el límite físico real de una bomba de infusión estándar.
+    const MAX_RATE = 999.9;
+    function syncDoseRate(changedField) {
+        const d = DRUG_DB[STATE.drugIdx];
+        if (!isWeightBased(d)) return;
+        if (changedField === 'dose') {
+            const r = doseToRate(STATE.dose, d, STATE.weight);
+            if (r !== null) STATE.rate = Math.min(MAX_RATE, Math.round(r * 10) / 10);
+        } else if (changedField === 'rate') {
+            const dz = rateToDose(STATE.rate, d, STATE.weight);
+            if (dz !== null) STATE.dose = Math.round(dz * 100) / 100;
+        }
+    }
 
     // State Engine
     let STATE = {
         power: true, running: false, alarm: null, leverClosed: true,
         accessId: 'piv20', drugIdx: 0, activeField: 'rate', buffer: '',
-        rate: 100.0, dose: 0.0, vtbi: 500.0, vi: 0.0, pres: 35, weight: 70
+        rate: 100.0, dose: 0.0, vtbi: 500.0, vi: 0.0, pres: 35, weight: 70,
+        pumpModel: 'generic'
     };
 
+    // Catálogo de interfaces de bomba disponibles para practicar reconocimiento visual.
+    // "layout" define diferencias estructurales reales entre marcas:
+    //  - 'full'   : botones Start / Stop / Pausa independientes (Genérico, BD Alaris)
+    //  - 'merged' : una sola tecla Start/Stop, sin Pausa separada (B. Braun Space)
+    //  - 'touch'  : pantalla táctil, teclado numérico "plano" (Baxter Sigma Spectrum)
+    const PUMP_MODELS = [
+        { id: 'generic', name: 'Genérico', layout: 'full',
+          labels: { start: 'START', stop: 'STOP', pause: 'PAUSA', power: 'ON/OFF', bolus: 'BOLUS', silence: 'SILENCIO' } },
+        { id: 'alaris', name: 'BD Alaris™ System (estilo)', layout: 'full',
+          labels: { start: 'START', stop: 'STOP/NO', pause: 'STANDBY', power: 'ON/OFF', bolus: 'BOLUS', silence: 'SILENCE X' } },
+        { id: 'braun', name: 'B. Braun Infusomat/Perfusor Space (estilo)', layout: 'merged',
+          labels: { startstopRun: 'STOP', startstopStopped: 'START/STOP', power: 'ON/OFF', bolus: 'PURGA', silence: 'SILENCIO' } },
+        { id: 'baxter', name: 'Baxter Sigma Spectrum (estilo)', layout: 'touch',
+          labels: { start: 'RUN', stop: 'STOP', pause: 'PAUSE', power: 'ON/OFF', bolus: 'BOLUS', silence: 'MUTE' } }
+    ];
+
+    function toggleStartStop() { if (STATE.running) stopPump(); else startPump(); }
+
+    function applyPumpModel(id) {
+        const model = PUMP_MODELS.find(m => m.id === id) || PUMP_MODELS[0];
+        STATE.pumpModel = model.id;
+        document.querySelector('.pump-wrapper').dataset.pump = model.id;
+
+        const merged = model.layout === 'merged';
+        document.getElementById('btn-start').classList.toggle('d-none', merged);
+        document.getElementById('btn-stop').classList.toggle('d-none', merged);
+        document.getElementById('btn-pause').classList.toggle('d-none', merged);
+        document.getElementById('btn-startstop').classList.toggle('d-none', !merged);
+
+        if (!merged) {
+            document.getElementById('lbl-start').innerText = model.labels.start;
+            document.getElementById('lbl-stop').innerText = model.labels.stop;
+            document.getElementById('lbl-pause').innerText = model.labels.pause;
+        }
+        document.getElementById('lbl-power').innerText = model.labels.power;
+        document.getElementById('lbl-bolus').innerText = model.labels.bolus;
+        document.getElementById('lbl-silence').innerText = model.labels.silence;
+
+        playTone(700);
+        renderUI();
+    }
+
     function renderUI() {
+        // Enforce physical animation state strictly based on logic.
+        // It will ONLY move if powered ON, actively running, and with NO alarms.
+        const shouldAnimate = STATE.power && STATE.running && !STATE.alarm;
+        document.getElementById('uiTube').classList.toggle('is-pumping', shouldAnimate);
+
         // Render Access Matrix
         document.getElementById('access-container').innerHTML = ACCESS_DB.map(a => `
             <div class="col-6 col-md-4 col-xl-3">
@@ -617,6 +779,7 @@
             document.getElementById('uiStatus').innerText = '';
             document.getElementById('uiDrugName').innerText = 'OFF';
             ['val-rate','val-vtbi','val-vi'].forEach(id => document.getElementById(id).innerText = '--');
+            document.getElementById('uiPressureBar').style.width = '0%';
             return;
         }
 
@@ -638,12 +801,26 @@
         document.getElementById('label-dose').innerText = `DOSIS (${d.unit})`;
         document.getElementById('val-access-tag').innerText = a.name;
         document.getElementById('val-pres').innerText = Math.round(STATE.pres);
+        document.getElementById('uiWeightTag').innerText = STATE.weight.toFixed(1);
+        document.getElementById('uiConcText').innerText = (isWeightBased(d) && d.concentration)
+            ? `CONC: ${d.concentration} ${d.concUnit}` : '';
 
-        const presPct = Math.min(100, (STATE.pres / 250) * 100);
+        const presPct = Math.max(0, Math.min(100, (STATE.pres / 250) * 100));
         document.getElementById('uiPressureBar').style.width = presPct + '%';
         document.getElementById('uiPressureBar').style.backgroundColor = presPct > 80 ? 'var(--oled-red)' : 'var(--oled-cyan)';
 
         ['rate', 'dose', 'vtbi'].forEach(f => document.getElementById(`box-${f}`).classList.toggle('active', STATE.activeField === f));
+
+        // Botón combinado Start/Stop (modelos con layout 'merged', p. ej. B. Braun Space)
+        const model = PUMP_MODELS.find(m => m.id === STATE.pumpModel);
+        if (model && model.layout === 'merged') {
+            const btn = document.getElementById('btn-startstop');
+            const icon = document.getElementById('icon-startstop');
+            btn.classList.toggle('btn-start', !STATE.running);
+            btn.classList.toggle('btn-stop', STATE.running);
+            icon.className = STATE.running ? 'fi fi-rr-square' : 'fi fi-rr-play';
+            document.getElementById('lbl-startstop').innerText = STATE.running ? model.labels.startstopRun : model.labels.startstopStopped;
+        }
 
         const getVal = (f, v) => (STATE.activeField === f && STATE.buffer) ? STATE.buffer : (f==='dose' && d.unit==='mL/h' ? '--' : v.toFixed(f==='dose'?2:1));
         document.getElementById('val-rate').innerText = getVal('rate', STATE.rate);
@@ -668,29 +845,61 @@
     }
 
     // Input Actions
-    document.getElementById('pt-weight').addEventListener('input', function() { STATE.weight = parseFloat(this.value) || 70; });
+    document.getElementById('pt-weight').addEventListener('input', function() {
+        const w = parseFloat(this.value);
+        // Un peso 0, negativo o no numérico rompería el cálculo de dosis/kg; se ignora.
+        if (!isNaN(w) && w > 0) {
+            STATE.weight = w;
+            // Si hay una dosis por kg programada, se recalcula la tasa para el nuevo peso
+            // (la dosis prescrita se mantiene constante, la tasa en mL/h es la que cambia).
+            const d = DRUG_DB[STATE.drugIdx];
+            if (isWeightBased(d) && STATE.dose > 0) syncDoseRate('dose');
+            renderUI();
+        }
+    });
     
     function setAccess(id) { playTone(900); STATE.accessId = id; STATE.pres = ACCESS_DB.find(x=>x.id===id).pres; renderUI(); }
-    function setDrug(idx) { playTone(900); STATE.drugIdx = idx; STATE.activeField = 'rate'; STATE.buffer = ''; renderUI(); }
+    function setDrug(idx) {
+        playTone(900);
+        STATE.drugIdx = idx;
+        STATE.activeField = 'rate';
+        STATE.buffer = '';
+        // Práctica de seguridad de bombas reales: al cambiar de fármaco/solución NUNCA se
+        // conserva la tasa/dosis anterior, para evitar administrar por error la tasa de un
+        // fármaco distinto (p. ej. arrastrar 100 mL/h a una infusión de Norepinefrina).
+        STATE.rate = 0;
+        STATE.dose = 0;
+        renderUI();
+    }
     function nextDrug() { setDrug((STATE.drugIdx + 1) % DRUG_DB.length); }
     function setActiveField(f) { if(!STATE.power || STATE.running) return; playTone(1000); STATE.activeField = f; STATE.buffer = ''; renderUI(); }
     
     function inputNum(n) { if(!STATE.power || STATE.running) return; playTone(1200); if(n==='.' && STATE.buffer.includes('.')) return; if(STATE.buffer.length < 6) STATE.buffer += n; renderUI(); }
     function clearInput() { if(!STATE.power || STATE.running) return; playTone(800); STATE.buffer = ''; renderUI(); }
     function applyInput() {
-        if(!STATE.power || STATE.buffer === '') return;
+        if(!STATE.power || STATE.running || STATE.buffer === '') return;
         playTone(1400);
-        const v = parseFloat(STATE.buffer);
-        if(!isNaN(v)) STATE[STATE.activeField] = v;
+        const v = Math.max(0, parseFloat(STATE.buffer));
+        if(!isNaN(v)) {
+            if (STATE.activeField === 'rate') STATE.rate = Math.min(MAX_RATE, v);
+            else STATE[STATE.activeField] = v;
+            syncDoseRate(STATE.activeField);
+        }
         STATE.buffer = ''; renderUI();
     }
     
     function adjustValue(dir) {
         if(!STATE.power || STATE.running) return;
         playTone(1000);
-        let s = (STATE.activeField === 'dose') ? 0.1 : 1.0;
-        STATE[STATE.activeField] = Math.max(0, STATE[STATE.activeField] + (dir*s));
-        if(STATE.activeField==='vtbi') STATE.vtbi = Math.max(0, STATE.vtbi + (dir*s*9));
+        // Paso por campo: la dosis usa incrementos finos (0.1), el VTBI incrementos de 10 mL,
+        // el resto (tasa) incrementos de 1 mL/h. Antes el VTBI sumaba dos veces (bug).
+        let s = 1.0;
+        if (STATE.activeField === 'dose') s = 0.1;
+        if (STATE.activeField === 'vtbi') s = 10.0;
+        let next = STATE[STATE.activeField] + (dir * s);
+        if (STATE.activeField === 'rate') next = Math.min(MAX_RATE, next);
+        STATE[STATE.activeField] = Math.max(0, next);
+        syncDoseRate(STATE.activeField);
         renderUI();
     }
 
@@ -698,12 +907,42 @@
     function startPump() {
         if(!STATE.power || STATE.alarm || STATE.rate <= 0) return;
         if(!STATE.leverClosed) { triggerAlarm('PUERTA ABIERTA'); return; }
+
+        const d = DRUG_DB[STATE.drugIdx];
+        const a = ACCESS_DB.find(x => x.id === STATE.accessId);
+        // Enclavamiento de seguridad (igual que una bomba inteligente real):
+        // no permite iniciar un vesicante por vía periférica.
+        if (d.vesicant && a.type === 'Peripheral') { triggerAlarm('ACCESO INCOMPATIBLE'); return; }
+        // No permite iniciar un fármaco por kg sin una dosis programada (evita correr "a ciegas").
+        if (isWeightBased(d) && STATE.dose <= 0) { triggerAlarm('DOSIS NO PROGRAMADA'); return; }
+
         playTone(1000, 'square', 0.1); setTimeout(()=>playTone(1200, 'square', 0.15), 100);
-        STATE.running = true; document.getElementById('uiTube').classList.add('is-pumping'); renderUI();
+        STATE.running = true; 
+        renderUI();
     }
-    function stopPump() { if(!STATE.power) return; playTone(600, 'sawtooth', 0.2); STATE.running = false; document.getElementById('uiTube').classList.remove('is-pumping'); renderUI(); }
-    function pausePump() { if(!STATE.power) return; playTone(800); STATE.running = false; document.getElementById('uiTube').classList.remove('is-pumping'); renderUI(); }
-    function togglePower() { playTone(500); STATE.power = !STATE.power; if(!STATE.power) stopPump(); renderUI(); }
+    
+    function stopPump() { 
+        if(!STATE.power) return; 
+        playTone(600, 'sawtooth', 0.2); 
+        STATE.running = false; 
+        renderUI(); 
+    }
+    
+    function pausePump() { 
+        if(!STATE.power) return; 
+        playTone(800); 
+        STATE.running = false; 
+        renderUI(); 
+    }
+    
+    function togglePower() { 
+        playTone(500); 
+        STATE.power = !STATE.power; 
+        if(!STATE.power) {
+            STATE.running = false; // Forces animation to stop instantly
+        }
+        renderUI(); 
+    }
     
     function triggerBolus() {
         if(STATE.running) {
@@ -712,9 +951,26 @@
             setTimeout(()=>{ STATE.rate = r; renderUI(); }, 1500);
         }
     }
-    function triggerAlarm(c) { if(!STATE.power) return; playTone(400, 'sawtooth', 0.5); STATE.alarm = c; STATE.running = false; document.getElementById('uiTube').classList.remove('is-pumping'); renderUI(); }
-    function resolveAlarm() { if(!STATE.power) return; playTone(1000); STATE.alarm = null; STATE.pres = ACCESS_DB.find(x=>x.id===STATE.accessId).pres; renderUI(); }
-    function silenceAlarm() { playTone(900); }
+    
+    function triggerAlarm(c) { 
+        if(!STATE.power) return; 
+        playTone(400, 'sawtooth', 0.5); 
+        STATE.alarm = c; 
+        STATE.running = false; // Prevents animation during alarm state
+        renderUI(); 
+    }
+    
+    function resolveAlarm() { 
+        if(!STATE.power) return; 
+        playTone(1000); 
+        STATE.alarm = null; 
+        STATE.pres = ACCESS_DB.find(x=>x.id===STATE.accessId).pres; 
+        renderUI(); 
+    }
+    
+    function silenceAlarm() { 
+        playTone(900); 
+    }
 
     document.getElementById('uiLever').addEventListener('click', function() {
         playTone(600); STATE.leverClosed = !STATE.leverClosed; this.classList.toggle('open', !STATE.leverClosed);
@@ -731,30 +987,53 @@
     }
     document.getElementById('calc-factor').addEventListener('change', updateCalc);
     document.getElementById('calc-gtt').addEventListener('input', updateCalc);
+    
     function loadCalcToPump() {
         playTone(1200);
         STATE.rate = parseFloat(document.getElementById('calc-result').innerText);
         STATE.activeField = 'rate'; STATE.buffer = '';
         renderUI();
     }
-    function setKVO() { playTone(900); STATE.rate = 3.0; renderUI(); }
+    
+    function setKVO() { 
+        playTone(900); 
+        STATE.rate = 3.0; 
+        renderUI(); 
+    }
 
     // Infusion Tick Engine
     setInterval(() => {
-        if(STATE.running && !STATE.alarm) {
+        if(STATE.running && !STATE.alarm && STATE.power) {
             const mlSec = STATE.rate / 3600;
-            STATE.vi += mlSec; STATE.vtbi = Math.max(0, STATE.vtbi - mlSec);
-            STATE.pres += (Math.random() - 0.5) * 2;
+            STATE.vi += mlSec; 
+            STATE.vtbi = Math.max(0, STATE.vtbi - mlSec);
+
+            // La presión ahora oscila alrededor del basal del acceso seleccionado en vez de
+            // hacer un "random walk" sin límite (antes podía derivar indefinidamente e
+            // incluso volverse negativa, algo clínicamente imposible).
+            const accessNow = ACCESS_DB.find(x => x.id === STATE.accessId);
+            const baseline = accessNow ? accessNow.pres : 35;
+            STATE.pres += (baseline - STATE.pres) * 0.08 + (Math.random() - 0.5) * 3;
+            STATE.pres = Math.max(0, STATE.pres);
+
             if(STATE.pres > 220) triggerAlarm('OCLUSIÓN');
-            if(STATE.vtbi <= 0) { STATE.vtbi = 0; triggerAlarm('VTBI ALCANZADO (KVO)'); playTone(800,'sine',2); }
+            if(STATE.vtbi <= 0) { 
+                STATE.vtbi = 0; 
+                triggerAlarm('VTBI ALCANZADO (KVO)'); 
+                playTone(800,'sine',2); 
+            }
             renderUI();
         }
     }, 1000);
 
-    // Bootstrap Tooltips Init
+    // Initialization
     document.addEventListener("DOMContentLoaded", function() {
+        // Initialize tooltips
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
         const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+        
+        // Initial render
+        applyPumpModel('generic');
         renderUI();
         updateCalc();
     });
